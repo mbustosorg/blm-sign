@@ -13,17 +13,25 @@
 """
 
 import argparse
-import logging
-
-from pythonosc.osc_server import AsyncIOOSCUDPServer
-from pythonosc.dispatcher import Dispatcher
 import asyncio
+import logging
+import time
+from logging.handlers import RotatingFileHandler
+
 import smbus
+from pythonosc.dispatcher import Dispatcher
+from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 FORMAT = '%(asctime)-15s %(message)s'
 logging.basicConfig(format=FORMAT)
-logger = logging.getLogger('IMU')
+logger = logging.getLogger('blm-sign')
 logger.setLevel(logging.INFO)
+log_format = logging.Formatter(FORMAT)
+
+file_handler = RotatingFileHandler('blm-control.log', maxBytes=20000, backupCount=10)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(log_format)
+logger.addHandler(file_handler)
 
 BLACK_B = 0x0001
 BLACK_L = 0x0002
@@ -78,13 +86,13 @@ bus.write_byte_data(DEVICE, OLATA, 0)
 bus.write_byte_data(DEVICE, OLATB, 0)
 
 current_display = 0x0000
+queue = []
 
 
 def handle_letter(path: str, value):
     """ Toggle letter commanded """
     global current_display
 
-    logger.info(path)
     letter = path.split('/')[2]
     display_map = DISPLAY_MAPS[letter]
     current_display = current_display ^ display_map
@@ -92,12 +100,13 @@ def handle_letter(path: str, value):
     bus.write_byte_data(DEVICE, OLATA, current_display)
     bus.write_byte_data(DEVICE, OLATB, current_display >> 8)
 
+    logger.info(f'{path} {bin(current_display)}')
+
 
 def handle_word(path: str, value):
     """ Toggle word commanded """
     global current_display
 
-    logger.info(path)
     word = path.split('/')[2]
     display_map = DISPLAY_MAPS[word]
     if current_display & display_map == 0:
@@ -110,12 +119,13 @@ def handle_word(path: str, value):
     bus.write_byte_data(DEVICE, OLATA, current_display)
     bus.write_byte_data(DEVICE, OLATB, current_display >> 8)
 
+    logger.info(f'{path} {bin(current_display)}')
+
 
 def handle_full(path: str, value):
     """ Toggle full display """
     global current_display
 
-    logger.info(path)
     if current_display == 0xFFFF:
         current_display = 0x0000
     else:
@@ -124,16 +134,29 @@ def handle_full(path: str, value):
     bus.write_byte_data(DEVICE, OLATA, current_display)
     bus.write_byte_data(DEVICE, OLATB, current_display >> 8)
 
+    logger.info(f'{path} {bin(current_display)}')
 
-async def run_command():
+
+def handle_animation(path: str, value):
+    """ Put an animation on the queue  """
+    global current_display
+
+    logger.info(path)
+    queue.append(int(path.split('/')[2]))
+
+
+async def run_command(number):
     """ Run 'command' """
-    #logger.info(f'Complete')
+    time.sleep(number)
+    logger.info(f'{number} complete')
 
 
 async def main_loop():
     """ Main execution loop """
     while True:
-        await asyncio.create_task(run_command())
+        if len(queue) > 0:
+            logger.info(f'{len(queue)} commands in the queue')
+            await asyncio.create_task(run_command(queue.pop(0)))
         await asyncio.sleep(1)
 
 
@@ -159,7 +182,7 @@ if __name__ == "__main__":
     dispatcher.map('/letter/*', handle_letter)
     dispatcher.map('/word/*', handle_word)
     dispatcher.map('/full', handle_full)
-    #dispatcher.map('/animation/*', handle_animation)
+    dispatcher.map('/animation/*', handle_animation)
 
     logger.info(f'Serving on {args.ip}:{args.port}')
 
