@@ -11,6 +11,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
+import random
 import time
 
 import smbus
@@ -69,13 +71,7 @@ BUS.write_byte_data(DEVICE1, IODIRB, 0x00)
 BUS.write_byte_data(DEVICE1, OLATA, 0)
 BUS.write_byte_data(DEVICE1, OLATB, 0)
 
-
-def right_rotate(n, d):
-    # In n>>d, first d bits are 0.
-    # To put last 3 bits of at
-    # first, do bitwise or of n>>d
-    # with n <<(INT_BITS - d)
-    return (n >> d) | (n << (32 - d)) & 0xFFFFFFFF
+LOGGER = logging.getLogger('blm-sign')
 
 
 def clear():
@@ -112,11 +108,42 @@ def black_lives_matter():
     clear()
 
 
-def scroll():
-    """ Left to right one letter at time za"""
+def window():
+    """ Slide window across """
     for i in range(0, 3):
-        for i in range(0, 16):
-            BUS.write_byte_data(DEVICE1, OLATA, right_rotate(1, i))
-            BUS.write_byte_data(DEVICE1, OLATB, right_rotate(1, i) >> 8)
+        bit = 0
+        for j in range(0, 16):
+            bit = bit | 0x1 << j
+            BUS.write_byte_data(DEVICE1, OLATA, bit & 0xFF)
+            BUS.write_byte_data(DEVICE1, OLATB, (bit & 0xFF00) >> 8)
+            time.sleep(0.1)
+        for j in range(0, 16):
+            bit = 0xFFFF << (j + 1)
+            BUS.write_byte_data(DEVICE1, OLATA, bit & 0xFF)
+            BUS.write_byte_data(DEVICE1, OLATB, (bit & 0xFF00) >> 8)
             time.sleep(0.1)
     clear()
+
+
+def scroll():
+    """ Left to right one letter at time """
+    for i in range(0, 3):
+        for j in range(0, 16):
+            bit = 0x1 << j
+            BUS.write_byte_data(DEVICE1, OLATA, bit & 0xFF)
+            BUS.write_byte_data(DEVICE1, OLATB, bit & 0xFF00 >> 8)
+            time.sleep(0.1)
+    clear()
+
+
+def random_letters():
+    """ Random letter """
+    samples = random.sample(range(0, 16), 16)
+    for i in range(0, 3):
+        for j in samples:
+            bit = 0x1 << j
+            BUS.write_byte_data(DEVICE1, OLATA, bit & 0xFF)
+            BUS.write_byte_data(DEVICE1, OLATB, bit & 0xFF00 >> 8)
+            time.sleep(0.1)
+    clear()
+

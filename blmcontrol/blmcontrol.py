@@ -22,7 +22,7 @@ from typing import List, Any
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import *
-from blmcontrol.animations import *
+from animations import *
 
 
 FORMAT = '%(asctime)-15s %(message)s'
@@ -108,6 +108,10 @@ async def run_command(number):
     elif number == 2:
         black_lives_matter()
     elif number == 3:
+        window()
+    elif number == 4:
+        random_letters()
+    elif number == 5:
         scroll()
     LOGGER.info(f'{number} complete')
 
