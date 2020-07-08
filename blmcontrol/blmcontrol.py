@@ -23,6 +23,7 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import *
 from animations import *
+import RPi.GPIO as GPIO
 
 
 FORMAT = '%(asctime)-15s %(message)s'
@@ -130,7 +131,20 @@ async def main_loop():
 async def init_main(args, dispatcher):
     """ Initialization routine """
     loop = asyncio.get_event_loop()
-    server = AsyncIOOSCUDPServer((args.ip, args.port), dispatcher, loop)
+    for i in range(0, 3):
+        try:
+            server = AsyncIOOSCUDPServer((args.ip, args.port), dispatcher, loop)
+            LOGGER.info(f'Serving on {args.ip}:{args.port}')
+            break
+        except:
+            for i in range(0, 10):
+                GPIO.output(12, True)
+                time.sleep(0.05)
+                GPIO.output(12, False)
+                time.sleep(0.05)
+            LOGGER.warning(f'Unable to bind to {args.ip}, retrying {i + 1}')
+            time.sleep(3)
+
     transport, _ = await server.create_serve_endpoint()
 
     await main_loop()
@@ -161,6 +175,14 @@ if __name__ == "__main__":
     DISPATCHER.map('/full', handle_full)
     DISPATCHER.map('/animation/*', handle_animation)
 
-    LOGGER.info(f'Serving on {ARGS.ip}:{ARGS.port}')
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(12, GPIO.OUT)
+    for i in range(0, 2):
+        GPIO.output(12, True)
+        time.sleep(0.75)
+        GPIO.output(12, False)
+        time.sleep(0.75)
+
+    handle_full('', None)
 
     asyncio.run(init_main(ARGS, DISPATCHER))

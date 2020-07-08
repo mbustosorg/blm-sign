@@ -74,21 +74,23 @@ BUS.write_byte_data(DEVICE1, OLATB, 0)
 LOGGER = logging.getLogger('blm-sign')
 
 
+def push_data(value):
+    BUS.write_byte_data(DEVICE1, OLATA, value)
+    BUS.write_byte_data(DEVICE1, OLATB, value >> 8)
+
+
 def clear():
     """ Clear the display """
-    BUS.write_byte_data(DEVICE1, OLATA, 0)
-    BUS.write_byte_data(DEVICE1, OLATB, 0 >> 8)
+    push_data(0)
 
 
 def blm_then_scroll():
     """ First letter then full """
     display = BLACK_B | LIVES_L | MATTER_M
     for i in range(0, 3):
-        BUS.write_byte_data(DEVICE1, OLATA, display)
-        BUS.write_byte_data(DEVICE1, OLATB, display >> 8)
+        push_data(display)
         time.sleep(3)
-        BUS.write_byte_data(DEVICE1, OLATA, FULL)
-        BUS.write_byte_data(DEVICE1, OLATB, FULL >> 8)
+        push_data(FULL)
         time.sleep(3)
     clear()
 
@@ -96,14 +98,11 @@ def blm_then_scroll():
 def black_lives_matter():
     """ One at at time """
     for i in range(0, 3):
-        BUS.write_byte_data(DEVICE1, OLATA, DISPLAY_MAPS['BLACK'])
-        BUS.write_byte_data(DEVICE1, OLATB, DISPLAY_MAPS['BLACK'] >> 8)
+        push_data(DISPLAY_MAPS['BLACK'])
         time.sleep(1)
-        BUS.write_byte_data(DEVICE1, OLATA, DISPLAY_MAPS['LIVES'])
-        BUS.write_byte_data(DEVICE1, OLATB, DISPLAY_MAPS['LIVES'] >> 8)
+        push_data(DISPLAY_MAPS['LIVES'])
         time.sleep(1)
-        BUS.write_byte_data(DEVICE1, OLATA, DISPLAY_MAPS['MATTER'])
-        BUS.write_byte_data(DEVICE1, OLATB, DISPLAY_MAPS['MATTER'] >> 8)
+        push_data(DISPLAY_MAPS['MATTER'])
         time.sleep(1)
     clear()
 
@@ -114,13 +113,11 @@ def window():
         bit = 0
         for j in range(0, 16):
             bit = bit | 0x1 << j
-            BUS.write_byte_data(DEVICE1, OLATA, bit & 0xFF)
-            BUS.write_byte_data(DEVICE1, OLATB, (bit & 0xFF00) >> 8)
+            push_data(bit & 0xFF)
             time.sleep(0.1)
         for j in range(0, 16):
             bit = 0xFFFF << (j + 1)
-            BUS.write_byte_data(DEVICE1, OLATA, bit & 0xFF)
-            BUS.write_byte_data(DEVICE1, OLATB, (bit & 0xFF00) >> 8)
+            push_data(bit & 0xFF)
             time.sleep(0.1)
     clear()
 
@@ -130,8 +127,7 @@ def scroll():
     for i in range(0, 3):
         for j in range(0, 16):
             bit = 0x1 << j
-            BUS.write_byte_data(DEVICE1, OLATA, bit & 0xFF)
-            BUS.write_byte_data(DEVICE1, OLATB, bit & 0xFF00 >> 8)
+            push_data(bit & 0xFF)
             time.sleep(0.1)
     clear()
 
@@ -142,8 +138,7 @@ def random_letters():
     for i in range(0, 3):
         for j in samples:
             bit = 0x1 << j
-            BUS.write_byte_data(DEVICE1, OLATA, bit & 0xFF)
-            BUS.write_byte_data(DEVICE1, OLATB, bit & 0xFF00 >> 8)
+            push_data(bit & 0xFF)
             time.sleep(0.1)
     clear()
 
