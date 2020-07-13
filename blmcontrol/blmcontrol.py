@@ -14,6 +14,7 @@
 
 import argparse
 import asyncio
+import datetime
 import logging
 from logging import Logger
 from logging.handlers import RotatingFileHandler
@@ -40,6 +41,11 @@ LOGGER.addHandler(FILE_HANDLER)
 CURRENT_DISPLAY = 0x0000
 QUEUE = []
 WATCHDOG = None
+
+
+def handle_parameter(path: str, value):
+    """ Handle a parameter change """
+    set_timing(path.split('/')[2], value)
 
 
 def handle_letter(path: str, value: List[Any]):
@@ -95,7 +101,6 @@ def handle_full(path: str, value):
 
 def handle_animation(path: str, value):
     """ Put an animation on the queue  """
-    global CURRENT_DISPLAY
     del value
 
     LOGGER.info(path)
@@ -105,9 +110,9 @@ def handle_animation(path: str, value):
 async def run_command(number):
     """ Run 'command' """
     if number == 1:
-        blm_then_scroll()
+        first_then_scroll()
     elif number == 2:
-        black_lives_matter()
+        one_at_a_time()
     elif number == 3:
         window()
     elif number == 4:
@@ -115,14 +120,23 @@ async def run_command(number):
     elif number == 5:
         scroll()
     LOGGER.info(f'{number} complete')
+    handle_full()
 
 
 async def main_loop():
     """ Main execution loop """
+    last_request = datetime.datetime.now()
+    current_animation = 0
     while True:
         if len(QUEUE) > 0:
             LOGGER.info(f'{len(QUEUE)} commands in the queue')
             await asyncio.create_task(run_command(QUEUE.pop(0)))
+            if (datetime.datetime.now() - last_request).seconds > 500:
+                current_animation += 1
+                if current_animation > 5:
+                    current_animation = 1
+                last_request = datetime.datetime.now()
+                handle_animation(f'/animation/{current_animation}', None)
         await asyncio.sleep(1)
         if WATCHDOG:
             WATCHDOG.resetWatchdog()
@@ -137,7 +151,7 @@ async def init_main(args, dispatcher):
             LOGGER.info(f'Serving on {args.ip}:{args.port}')
             break
         except:
-            for i in range(0, 10):
+            for j in range(0, 10):
                 GPIO.output(12, True)
                 time.sleep(0.05)
                 GPIO.output(12, False)
@@ -174,6 +188,7 @@ if __name__ == "__main__":
     DISPATCHER.map('/word/*', handle_word)
     DISPATCHER.map('/full', handle_full)
     DISPATCHER.map('/animation/*', handle_animation)
+    DISPATCHER.map('/parameter/*', handle_parameter)
 
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(12, GPIO.OUT)

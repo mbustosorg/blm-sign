@@ -17,45 +17,36 @@ import time
 
 import smbus
 
-BLACK_B = 0x0001
-BLACK_L = 0x0002
-BLACK_A = 0x0004
-BLACK_C = 0x0008
-BLACK_K = 0x0010
-LIVES_L = 0x0020
-LIVES_I = 0x0040
-LIVES_V = 0x0080
-LIVES_E = 0x0100
-LIVES_S = 0x0200
-MATTER_M = 0x0400
-MATTER_A = 0x0800
-MATTER_T1 = 0x1000
-MATTER_T2 = 0x2000
-MATTER_E = 0x4000
-MATTER_R = 0x8000
+MARVIN_M = 0x0001
+MARVIN_A = 0x0002
+MARVIN_R = 0x0004
+MARVIN_V = 0x0008
+MARVIN_I = 0x0010
+MARVIN_N = 0x0020
+BREAKS_B = 0x0040
+BREAKS_R = 0x0080
+BREAKS_E = 0x0100
+BREAKS_A = 0x0200
+BREAKS_K = 0x0400
+BREAKS_S = 0x0800
 
 DISPLAY_MAPS = {
-    'BLACK_B': BLACK_B,
-    'BLACK_L': BLACK_L,
-    'BLACK_A': BLACK_A,
-    'BLACK_C': BLACK_C,
-    'BLACK_K': BLACK_K,
-    'BLACK': BLACK_B | BLACK_L | BLACK_A | BLACK_C | BLACK_K,
-    'LIVES_L': LIVES_L,
-    'LIVES_I': LIVES_I,
-    'LIVES_V': LIVES_V,
-    'LIVES_E': LIVES_E,
-    'LIVES_S': LIVES_S,
-    'LIVES': LIVES_L | LIVES_I | LIVES_V | LIVES_E | LIVES_S,
-    'MATTER_M': MATTER_M,
-    'MATTER_A': MATTER_A,
-    'MATTER_T1': MATTER_T1,
-    'MATTER_T2': MATTER_T2,
-    'MATTER_E': MATTER_E,
-    'MATTER_R': MATTER_R,
-    'MATTER': MATTER_M | MATTER_A | MATTER_T1 | MATTER_T2 | MATTER_E | MATTER_R
+    'MARVIN_M': MARVIN_M,
+    'MARVIN_A': MARVIN_A,
+    'MARVIN_R': MARVIN_R,
+    'MARVIN_V': MARVIN_V,
+    'MARVIN_I': MARVIN_I,
+    'MARVIN_N': MARVIN_N,
+    'MARVIN': MARVIN_M | MARVIN_A | MARVIN_R | MARVIN_V | MARVIN_I | MARVIN_N,
+    'BREAKS_B': BREAKS_B,
+    'BREAKS_R': BREAKS_R,
+    'BREAKS_E': BREAKS_E,
+    'BREAKS_A': BREAKS_A,
+    'BREAKS_K': BREAKS_K,
+    'BREAKS_S': BREAKS_S,
+    'BREAKS': BREAKS_B | BREAKS_R | BREAKS_E | BREAKS_A | BREAKS_K | BREAKS_S
 }
-FULL = DISPLAY_MAPS['BLACK'] | DISPLAY_MAPS['LIVES'] | DISPLAY_MAPS['MATTER']
+FULL = DISPLAY_MAPS['MARVIN'] | DISPLAY_MAPS['BREAKS']
 
 DEVICE1 = 0x26
 DEVICE2 = 0x27
@@ -77,8 +68,7 @@ FAST = 0.1
 MEDIUM = 1.0
 SLOW = 3.0
 TIMES = 3
-
-MESSAGE_LENGTH = 16
+MESSAGE_LENGTH = 12
 
 
 def set_timing(name: str, value):
@@ -108,7 +98,7 @@ def clear():
 
 def first_then_scroll():
     """ First letter then full """
-    display = BLACK_B | LIVES_L | MATTER_M
+    display = MARVIN_M | BREAKS_B
     for i in range(0, int(TIMES)):
         push_data(display)
         time.sleep(SLOW)
@@ -120,11 +110,9 @@ def first_then_scroll():
 def one_at_a_time():
     """ One at at time """
     for i in range(0, int(TIMES)):
-        push_data(DISPLAY_MAPS['BLACK'])
+        push_data(DISPLAY_MAPS['MARVIN'])
         time.sleep(MEDIUM)
-        push_data(DISPLAY_MAPS['LIVES'])
-        time.sleep(MEDIUM)
-        push_data(DISPLAY_MAPS['MATTER'])
+        push_data(DISPLAY_MAPS['BREAKS'])
         time.sleep(MEDIUM)
     clear()
 
