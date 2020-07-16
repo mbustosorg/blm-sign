@@ -14,7 +14,6 @@
 
 import argparse
 import asyncio
-import datetime
 import logging
 from logging import Logger
 from logging.handlers import RotatingFileHandler
@@ -24,7 +23,11 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import *
 from animations import *
-import RPi.GPIO as GPIO
+try:
+    import RPi.GPIO as GPIO
+    RPI = True
+except ImportError:
+    RPI = False
 
 
 FORMAT = '%(asctime)-15s %(message)s'
@@ -57,8 +60,7 @@ def handle_letter(path: str, value: List[Any]):
     display_map = DISPLAY_MAPS[letter]
     CURRENT_DISPLAY = CURRENT_DISPLAY ^ display_map
 
-    BUS.write_byte_data(DEVICE1, OLATA, CURRENT_DISPLAY)
-    BUS.write_byte_data(DEVICE1, OLATB, CURRENT_DISPLAY >> 8)
+    push_data(CURRENT_DISPLAY)
 
     LOGGER.info(f'{path} {bin(CURRENT_DISPLAY)}')
 
@@ -77,13 +79,12 @@ def handle_word(path: str, value):
     else:
         CURRENT_DISPLAY = CURRENT_DISPLAY | display_map
 
-    BUS.write_byte_data(DEVICE1, OLATA, CURRENT_DISPLAY)
-    BUS.write_byte_data(DEVICE1, OLATB, CURRENT_DISPLAY >> 8)
+    push_data(CURRENT_DISPLAY)
 
     LOGGER.info(f'{path} {bin(CURRENT_DISPLAY)}')
 
 
-def handle_full(path: str, value):
+def handle_full(path: str = None, value = None):
     """ Toggle full display """
     global CURRENT_DISPLAY
     del value
@@ -93,22 +94,22 @@ def handle_full(path: str, value):
     else:
         CURRENT_DISPLAY = 0xFFFF
 
-    BUS.write_byte_data(DEVICE1, OLATA, CURRENT_DISPLAY)
-    BUS.write_byte_data(DEVICE1, OLATB, CURRENT_DISPLAY >> 8)
+    push_data(CURRENT_DISPLAY)
 
-    LOGGER.info(f'{path} {bin(CURRENT_DISPLAY)}')
+    LOGGER.info(f'handle full: {path} {bin(CURRENT_DISPLAY)}')
 
 
 def handle_animation(path: str, value):
     """ Put an animation on the queue  """
     del value
 
-    LOGGER.info(path)
+    LOGGER.info(f'Received {path}')
     QUEUE.append(int(path.split('/')[2]))
 
 
 async def run_command(number):
     """ Run 'command' """
+    LOGGER.info(f'Starting {number}')
     if number == 1:
         first_then_scroll()
     elif number == 2:
@@ -125,18 +126,25 @@ async def run_command(number):
 
 async def main_loop():
     """ Main execution loop """
+    global QUEUE
+
     last_request = datetime.datetime.now()
     current_animation = 0
     while True:
         if len(QUEUE) > 0:
-            LOGGER.info(f'{len(QUEUE)} commands in the queue')
-            await asyncio.create_task(run_command(QUEUE.pop(0)))
-            if (datetime.datetime.now() - last_request).seconds > 500:
-                current_animation += 1
-                if current_animation > 5:
-                    current_animation = 1
-                last_request = datetime.datetime.now()
-                handle_animation(f'/animation/{current_animation}', None)
+            last_request = datetime.datetime.now()
+            if QUEUE[-1] == 6:
+                QUEUE = []
+                LOGGER.info(f'Cancel commanded, resetting')
+            else:
+                LOGGER.info(f'{len(QUEUE)} commands in the queue')
+                await asyncio.create_task(run_command(QUEUE.pop(0)))
+        if (datetime.datetime.now() - last_request).seconds > 500:
+            current_animation += 1
+            if current_animation > 5:
+                current_animation = 1
+            last_request = datetime.datetime.now()
+            handle_animation(f'/animation/{current_animation}', None)
         await asyncio.sleep(1)
         if WATCHDOG:
             WATCHDOG.resetWatchdog()
@@ -151,11 +159,12 @@ async def init_main(args, dispatcher):
             LOGGER.info(f'Serving on {args.ip}:{args.port}')
             break
         except:
-            for j in range(0, 10):
-                GPIO.output(12, True)
-                time.sleep(0.05)
-                GPIO.output(12, False)
-                time.sleep(0.05)
+            if RPI:
+                for j in range(0, 10):
+                    GPIO.output(12, True)
+                    time.sleep(0.05)
+                    GPIO.output(12, False)
+                    time.sleep(0.05)
             LOGGER.warning(f'Unable to bind to {args.ip}, retrying {i + 1}')
             time.sleep(3)
 
@@ -190,13 +199,14 @@ if __name__ == "__main__":
     DISPATCHER.map('/animation/*', handle_animation)
     DISPATCHER.map('/parameter/*', handle_parameter)
 
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(12, GPIO.OUT)
-    for i in range(0, 2):
-        GPIO.output(12, True)
-        time.sleep(0.75)
-        GPIO.output(12, False)
-        time.sleep(0.75)
+    if RPI:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(12, GPIO.OUT)
+        for i in range(0, 2):
+            GPIO.output(12, True)
+            time.sleep(0.75)
+            GPIO.output(12, False)
+            time.sleep(0.75)
 
     handle_full('', None)
 

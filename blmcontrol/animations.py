@@ -15,7 +15,11 @@ import logging
 import random
 import time
 
-import smbus
+try:
+    import smbus
+    SMBUS = True
+except ImportError:
+    SMBUS = False
 
 BLACK_B = 0x0001
 BLACK_L = 0x0002
@@ -64,12 +68,13 @@ IODIRB = 0x01
 OLATA = 0x14
 OLATB = 0x15
 
-BUS = smbus.SMBus(1)
+if SMBUS:
+    BUS = smbus.SMBus(1)
 
-BUS.write_byte_data(DEVICE1, IODIRA, 0x00)
-BUS.write_byte_data(DEVICE1, IODIRB, 0x00)
-BUS.write_byte_data(DEVICE1, OLATA, 0)
-BUS.write_byte_data(DEVICE1, OLATB, 0)
+    BUS.write_byte_data(DEVICE1, IODIRA, 0x00)
+    BUS.write_byte_data(DEVICE1, IODIRB, 0x00)
+    BUS.write_byte_data(DEVICE1, OLATA, 0)
+    BUS.write_byte_data(DEVICE1, OLATB, 0)
 
 LOGGER = logging.getLogger('blm-sign')
 
@@ -97,8 +102,9 @@ def set_timing(name: str, value):
 
 def push_data(value):
     """ Push data to I2C devices """
-    BUS.write_byte_data(DEVICE1, OLATA, value & 0xFF)
-    BUS.write_byte_data(DEVICE1, OLATB, (value & 0xFF00) >> 8)
+    if SMBUS:
+        BUS.write_byte_data(DEVICE1, OLATA, value & 0xFF)
+        BUS.write_byte_data(DEVICE1, OLATB, (value & 0xFF00) >> 8)
 
 
 def clear():
