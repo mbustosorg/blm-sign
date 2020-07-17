@@ -11,6 +11,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import datetime
 import logging
 import random
 import time
@@ -70,7 +71,6 @@ OLATB = 0x15
 
 if SMBUS:
     BUS = smbus.SMBus(1)
-
     BUS.write_byte_data(DEVICE1, IODIRA, 0x00)
     BUS.write_byte_data(DEVICE1, IODIRB, 0x00)
     BUS.write_byte_data(DEVICE1, OLATA, 0)
@@ -170,3 +170,51 @@ def random_letters():
             time.sleep(FAST)
     clear()
 
+
+def flickering():
+    """ Flicker a random couple letters """
+    letter = 0x1 << int(random.random() * 16)
+    if random.randint(1, 2) == 1:
+        primary = 0xFFFF & ~letter
+        secondary = 0xFFFF
+    else:
+        primary = 0xFFFF
+        secondary = 0xFFFF & ~letter
+    for i in range(0, 45):
+        print('on')
+        time_sample = random.random()
+        push_data(primary)
+        time.sleep(time_sample)
+        print('off')
+        push_data(secondary)
+        time.sleep(0.1)
+    clear()
+
+
+def startup():
+    """ Simulate starting up a neon light """
+    start_time = [random.random() * 1.0 for x in range(0, 16)]
+    periods = [(x, x * 2, x * 3) for x in start_time]
+    start = datetime.datetime.now()
+    display = 0
+    while display != 0xFFFF:
+        delta = datetime.datetime.now() - start
+        clock = float(delta.seconds) + delta.microseconds / 1000000.0
+        for i, x in enumerate(periods):
+            if clock > x[2] + 0.2:
+                display = display | 0x1 << i
+            elif clock > x[2] + 0.1:
+                display = display & ~(0x1 << i)
+            elif clock > x[2]:
+                display = display | 0x1 << i
+            elif clock > x[1] + 0.1:
+                display = display & ~(0x1 << i)
+            elif clock > x[1]:
+                display = display | 0x1 << i
+            elif clock > x[0] + 0.1:
+                display = display & ~(0x1 << i)
+            elif clock > x[0]:
+                display = display | 0x1 << i
+        push_data(display)
+    time.sleep(60)
+    clear()
