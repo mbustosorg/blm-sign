@@ -84,7 +84,7 @@ def handle_word(path: str, value):
     LOGGER.info(f'{path} {bin(CURRENT_DISPLAY)}')
 
 
-def handle_full(path: str = None, value = None):
+def handle_full(path: str = None, value=None):
     """ Toggle full display """
     global CURRENT_DISPLAY
     del value
@@ -109,6 +109,8 @@ def handle_animation(path: str, value):
 
 async def run_command(number):
     """ Run 'command' """
+    global CURRENT_DISPLAY
+
     LOGGER.info(f'Starting {number}')
     if number == 1:
         first_then_scroll()
@@ -120,66 +122,96 @@ async def run_command(number):
         random_letters()
     elif number == 5:
         scroll()
+    elif number == 6:
+        flickering()
+    elif number == 7:
+        startup()
     LOGGER.info(f'{number} complete')
+    CURRENT_DISPLAY = 0
     handle_full()
 
 
-async def main_loop():
+async def main_loop(start_hour, end_hour, animate):
     """ Main execution loop """
     global QUEUE
 
     last_request = datetime.datetime.now()
     current_animation = 0
     while True:
+        now = datetime.datetime.now()
         if len(QUEUE) > 0:
-            last_request = datetime.datetime.now()
-            if QUEUE[-1] == 6:
+            last_request = now
+            if QUEUE[-1] == 8:
                 QUEUE = []
                 LOGGER.info(f'Cancel commanded, resetting')
             else:
                 LOGGER.info(f'{len(QUEUE)} commands in the queue')
                 await asyncio.create_task(run_command(QUEUE.pop(0)))
-        if (datetime.datetime.now() - last_request).seconds > 500:
-            current_animation += 1
-            if current_animation > 5:
-                current_animation = 1
-            last_request = datetime.datetime.now()
-            handle_animation(f'/animation/{current_animation}', None)
+        if animate:
+            if (now - last_request).seconds > animate:
+                current_animation += 1
+                if current_animation > 7:
+                    current_animation = 1
+                last_request = now
+                handle_animation(f'/animation/{current_animation}', None)
+        else:
+            if now.hour > start_hour & now.hour < end_hour:
+                handle_full()
+            else:
+                push_data(0)
         await asyncio.sleep(1)
         if WATCHDOG:
             WATCHDOG.resetWatchdog()
 
 
+def signal(length, count):
+    """ Signal status on buzzer """
+    if RPI:
+        for j in range(0, count):
+            GPIO.output(12, True)
+            time.sleep(length)
+            GPIO.output(12, False)
+            time.sleep(length)
+
+
 async def init_main(args, dispatcher):
     """ Initialization routine """
     loop = asyncio.get_event_loop()
-    for i in range(0, 3):
+    for i in range(0, 5):
         try:
             server = AsyncIOOSCUDPServer((args.ip, args.port), dispatcher, loop)
             LOGGER.info(f'Serving on {args.ip}:{args.port}')
+            signal(0.05, 3)
             break
         except:
-            if RPI:
-                for j in range(0, 10):
-                    GPIO.output(12, True)
-                    time.sleep(0.05)
-                    GPIO.output(12, False)
-                    time.sleep(0.05)
+            signal(0.5, 3)
             LOGGER.warning(f'Unable to bind to {args.ip}, retrying {i + 1}')
             time.sleep(3)
 
-    transport, _ = await server.create_serve_endpoint()
+    for i in range(0, 5):
+        try:
+            transport, _ = await server.create_serve_endpoint()
+            LOGGER.info(f'Server endpoint established')
+            signal(0.05, 3)
+            break
+        except:
+            signal(0.5, 3)
+            LOGGER.warning('Unable to establish endpoint, retrying')
+            time.sleep(5)
 
-    await main_loop()
+    await main_loop(args.start_hour, args.end_hour, args.animate)
 
     transport.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
 
     PARSER = argparse.ArgumentParser()
-    PARSER.add_argument("--ip", default="10.0.1.47", help="The ip to listen on")
-    PARSER.add_argument("--port", type=int, default=9999, help="The port to listen on")
+    PARSER.add_argument('--ip', default='10.0.1.47', help='The ip to listen on')
+    PARSER.add_argument('--port', type=int, default=9999, help='The port to listen on')
+    PARSER.add_argument('--start_hour', type=int, default=19, help='start hour')
+    PARSER.add_argument('--end_hour', type=int, default=23, help='end hour')
+    PARSER.add_argument('--animate', type=int, default=0, help='animation period')
     ARGS = PARSER.parse_args()
 
     ERRMSG = YRefParam()
@@ -202,11 +234,7 @@ if __name__ == "__main__":
     if RPI:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(12, GPIO.OUT)
-        for i in range(0, 2):
-            GPIO.output(12, True)
-            time.sleep(0.75)
-            GPIO.output(12, False)
-            time.sleep(0.75)
+        signal(0.75, 2)
 
     handle_full('', None)
 
