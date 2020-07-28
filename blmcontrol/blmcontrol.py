@@ -36,7 +36,7 @@ LOGGER: Logger = logging.getLogger('blm-sign')
 LOGGER.setLevel(logging.INFO)
 LOG_FORMAT = logging.Formatter(FORMAT)
 
-FILE_HANDLER = RotatingFileHandler('blmcontrol.log', maxBytes=20000, backupCount=10)
+FILE_HANDLER = RotatingFileHandler('blmcontrol.log', maxBytes=40000, backupCount=5)
 FILE_HANDLER.setLevel(logging.INFO)
 FILE_HANDLER.setFormatter(LOG_FORMAT)
 LOGGER.addHandler(FILE_HANDLER)
@@ -131,9 +131,9 @@ async def run_command(number):
     handle_full()
 
 
-async def main_loop(start_hour, end_hour, animate):
+async def main_loop(start_time_string, end_time_string, animate):
     """ Main execution loop """
-    global QUEUE
+    global QUEUE, CURRENT_DISPLAY
 
     last_request = datetime.datetime.now()
     current_animation = 0
@@ -155,10 +155,18 @@ async def main_loop(start_hour, end_hour, animate):
                 last_request = now
                 handle_animation(f'/animation/{current_animation}', None)
         else:
-            if now.hour > start_hour & now.hour < end_hour:
-                handle_full()
+            start_time = datetime.datetime.strptime(start_time_string, '%H:%M')
+            end_time = datetime.datetime.strptime(end_time_string, '%H:%M')
+            if (now.time() >= start_time.time()) & (now.time() < end_time.time()):
+                if CURRENT_DISPLAY != 0xFFFF:
+                    LOGGER.info('Starting up')
+                    CURRENT_DISPLAY = 0xFFFF
+                    push_data(CURRENT_DISPLAY)
             else:
-                push_data(0)
+                if CURRENT_DISPLAY != 0:
+                    LOGGER.info('Shutting down')
+                    CURRENT_DISPLAY = 0
+                    push_data(CURRENT_DISPLAY)
         await asyncio.sleep(1)
         if WATCHDOG:
             WATCHDOG.resetWatchdog()
@@ -199,7 +207,7 @@ async def init_main(args, dispatcher):
             LOGGER.warning('Unable to establish endpoint, retrying')
             time.sleep(5)
 
-    await main_loop(args.start_hour, args.end_hour, args.animate)
+    await main_loop(args.start_time, args.end_time, args.animate)
 
     transport.close()
 
@@ -209,8 +217,8 @@ if __name__ == '__main__':
     PARSER = argparse.ArgumentParser()
     PARSER.add_argument('--ip', default='10.0.1.47', help='The ip to listen on')
     PARSER.add_argument('--port', type=int, default=9999, help='The port to listen on')
-    PARSER.add_argument('--start_hour', type=int, default=19, help='start hour')
-    PARSER.add_argument('--end_hour', type=int, default=23, help='end hour')
+    PARSER.add_argument('--start_time', type=str, default='19:00', help='start time')
+    PARSER.add_argument('--end_time', type=str, default='23:05', help='end time')
     PARSER.add_argument('--animate', type=int, default=0, help='animation period')
     ARGS = PARSER.parse_args()
 
@@ -234,7 +242,7 @@ if __name__ == '__main__':
     if RPI:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(12, GPIO.OUT)
-        signal(0.75, 2)
+        signal(0.25, 2)
 
     handle_full('', None)
 
