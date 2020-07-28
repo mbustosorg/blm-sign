@@ -5,4 +5,4 @@ This is the open source repository that contains all the construction informatio
 
 [![blmsign](http://img.youtube.com/vi/cws-HkbJuXY/0.jpg)](https://www.youtube.com/watch?v=cws-HkbJuXY "blmsign")
 
-The top level directory here is the Python code that manages the illumination and animation.  The support directory contains the CNC cut files, layouts for the OSC controller, desing documents for the control box and budgeting information.
+The top level directory here is the Python code that manages the illumination and animation.  The support directory contains the CNC cut files, layouts for the OSC controller, design documents for the control box and budgeting information.
