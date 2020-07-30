@@ -23,6 +23,8 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import *
 from animations import *
+import earth_data
+
 try:
     import RPi.GPIO as GPIO
     RPI = True
@@ -135,10 +137,11 @@ async def main_loop(start_time_string, end_time_string, animate):
     """ Main execution loop """
     global QUEUE, CURRENT_DISPLAY
 
-    last_request = datetime.datetime.now()
+    last_request = datetime.datetime.utcnow()
     current_animation = 0
+
     while True:
-        now = datetime.datetime.now()
+        now = datetime.datetime.utcnow()
         if len(QUEUE) > 0:
             last_request = now
             if QUEUE[-1] == 8:
@@ -147,6 +150,17 @@ async def main_loop(start_time_string, end_time_string, animate):
             else:
                 LOGGER.info(f'{len(QUEUE)} commands in the queue')
                 await asyncio.create_task(run_command(QUEUE.pop(0)))
+        if (now - last_request).seconds > animate + 60:
+            if earth_data.lights_out(on_offset=120, hard_off=end_time_string):
+                if CURRENT_DISPLAY != 0:
+                    LOGGER.info('Shutting down')
+                    CURRENT_DISPLAY = 0
+                    push_data(CURRENT_DISPLAY)
+            else:
+                if CURRENT_DISPLAY != 0xFFFF:
+                    LOGGER.info('Starting up')
+                    CURRENT_DISPLAY = 0xFFFF
+                    push_data(CURRENT_DISPLAY)
         if animate:
             if (now - last_request).seconds > animate:
                 current_animation += 1
@@ -154,19 +168,6 @@ async def main_loop(start_time_string, end_time_string, animate):
                     current_animation = 1
                 last_request = now
                 handle_animation(f'/animation/{current_animation}', None)
-        else:
-            start_time = datetime.datetime.strptime(start_time_string, '%H:%M')
-            end_time = datetime.datetime.strptime(end_time_string, '%H:%M')
-            if (now.time() >= start_time.time()) & (now.time() < end_time.time()):
-                if CURRENT_DISPLAY != 0xFFFF:
-                    LOGGER.info('Starting up')
-                    CURRENT_DISPLAY = 0xFFFF
-                    push_data(CURRENT_DISPLAY)
-            else:
-                if CURRENT_DISPLAY != 0:
-                    LOGGER.info('Shutting down')
-                    CURRENT_DISPLAY = 0
-                    push_data(CURRENT_DISPLAY)
         await asyncio.sleep(1)
         if WATCHDOG:
             WATCHDOG.resetWatchdog()
@@ -217,8 +218,8 @@ if __name__ == '__main__':
     PARSER = argparse.ArgumentParser()
     PARSER.add_argument('--ip', default='10.0.1.47', help='The ip to listen on')
     PARSER.add_argument('--port', type=int, default=9999, help='The port to listen on')
-    PARSER.add_argument('--start_time', type=str, default='19:00', help='start time')
-    PARSER.add_argument('--end_time', type=str, default='23:05', help='end time')
+    PARSER.add_argument('--start_time', type=str, default='3:00', help='start time')
+    PARSER.add_argument('--end_time', type=str, default='8:00', help='end time')
     PARSER.add_argument('--animate', type=int, default=0, help='animation period')
     ARGS = PARSER.parse_args()
 
