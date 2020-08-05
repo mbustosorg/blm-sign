@@ -78,10 +78,10 @@ if SMBUS:
 
 LOGGER = logging.getLogger('blm-sign')
 
-FAST = 0.1
-MEDIUM = 1.0
+FAST = 0.05
+MEDIUM = 1.5
 SLOW = 3.0
-TIMES = 3
+TIMES = 5
 
 MESSAGE_LENGTH = 16
 
