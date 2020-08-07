@@ -17,7 +17,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 SEVEN_HOURS = relativedelta(hours=7)
-sun_data = pd.read_csv(os.path.join(os.path.dirname(__file__), 'earth_data', 'sunriseSunset.csv'), parse_dates=['sunrise', 'sunset'])
+sun_data = pd.read_csv(os.path.join(os.path.dirname(__file__), 'sunriseSunset.csv'), parse_dates=['sunrise', 'sunset'])
 sun_data['sunrise'] = sun_data['sunrise'].apply(lambda x: x - SEVEN_HOURS)
 sun_data['sunset'] = sun_data['sunset'].apply(lambda x: x - SEVEN_HOURS)
 sun_data['date'] = sun_data['sunrise'].dt.date
@@ -26,7 +26,7 @@ sun_data = sun_data.set_index('date')
 
 def lights_out(current_time=datetime.datetime.now(), on_offset: int = 0, hard_off: str = '4:00'):
     """ Are we off now? """
-    now = current_time.replace(year=2000) - SEVEN_HOURS
+    now = current_time.replace(year=2000) #- SEVEN_HOURS
     #now = now.replace(hour=23)
     off_time = datetime.datetime.strptime(hard_off, '%H:%M')
     off_time = off_time.replace(year=2000, day=now.day, month=now.month)

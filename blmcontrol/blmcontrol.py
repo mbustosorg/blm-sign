@@ -23,7 +23,7 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import *
 from animations import *
-import earth_data
+from earth_data import earth_data
 
 try:
     import RPi.GPIO as GPIO
@@ -44,7 +44,7 @@ FILE_HANDLER.setFormatter(LOG_FORMAT)
 LOGGER.addHandler(FILE_HANDLER)
 
 CURRENT_DISPLAY = 0x0000
-QUEUE = []
+QUEUE = {'animations': [], 'last_request': datetime.datetime.utcnow()}
 WATCHDOG = None
 
 
@@ -61,10 +61,11 @@ def handle_letter(path: str, value: List[Any]):
     letter = path.split('/')[2]
     display_map = DISPLAY_MAPS[letter]
     CURRENT_DISPLAY = CURRENT_DISPLAY ^ display_map
+    QUEUE['last_request'] = datetime.datetime.utcnow()
 
     push_data(CURRENT_DISPLAY)
 
-    LOGGER.info(f'{path} {bin(CURRENT_DISPLAY)}')
+    LOGGER.info(f'{path}')
 
 
 def handle_word(path: str, value):
@@ -80,10 +81,11 @@ def handle_word(path: str, value):
         CURRENT_DISPLAY = CURRENT_DISPLAY & ~display_map
     else:
         CURRENT_DISPLAY = CURRENT_DISPLAY | display_map
+    QUEUE['last_request'] = datetime.datetime.utcnow()
 
     push_data(CURRENT_DISPLAY)
 
-    LOGGER.info(f'{path} {bin(CURRENT_DISPLAY)}')
+    LOGGER.info(f'{path}')
 
 
 def handle_full(path: str = None, value=None):
@@ -95,10 +97,11 @@ def handle_full(path: str = None, value=None):
         CURRENT_DISPLAY = 0x0000
     else:
         CURRENT_DISPLAY = 0xFFFF
+    QUEUE['last_request'] = datetime.datetime.utcnow()
 
     push_data(CURRENT_DISPLAY)
 
-    LOGGER.info(f'handle full: {path} {bin(CURRENT_DISPLAY)}')
+    LOGGER.info(f'handle FULL')
 
 
 def handle_animation(path: str, value):
@@ -106,7 +109,8 @@ def handle_animation(path: str, value):
     del value
 
     LOGGER.info(f'Received {path}')
-    QUEUE.append(int(path.split('/')[2]))
+    QUEUE['animations'].append(int(path.split('/')[2]))
+    QUEUE['last_request'] = datetime.datetime.utcnow()
 
 
 async def run_command(number):
@@ -125,7 +129,8 @@ async def run_command(number):
     elif number == 5:
         scroll()
     elif number == 6:
-        flickering()
+        #flickering()
+        window()
     elif number == 7:
         startup()
     LOGGER.info(f'{number} complete')
@@ -133,25 +138,24 @@ async def run_command(number):
     handle_full()
 
 
-async def main_loop(start_time_string, end_time_string, animate):
+async def main_loop(on_offset, end_time_string, animate):
     """ Main execution loop """
-    global QUEUE, CURRENT_DISPLAY
+    global CURRENT_DISPLAY, QUEUE
 
-    last_request = datetime.datetime.utcnow()
     current_animation = 0
 
     while True:
-        now = datetime.datetime.utcnow()
-        if len(QUEUE) > 0:
-            last_request = now
-            if QUEUE[-1] == 8:
-                QUEUE = []
+        if len(QUEUE['animations']) > 0:
+            QUEUE['last_request'] = datetime.datetime.utcnow()
+            if QUEUE['animations'][-1] == 8:
+                QUEUE['animations'] = []
                 LOGGER.info(f'Cancel commanded, resetting')
             else:
-                LOGGER.info(f'{len(QUEUE)} commands in the queue')
-                await asyncio.create_task(run_command(QUEUE.pop(0)))
-        if (now - last_request).seconds > animate + 60:
-            if earth_data.lights_out(on_offset=120, hard_off=end_time_string):
+                LOGGER.info(f"{len(QUEUE['animations'])} commands in the queue")
+                animation = QUEUE['animations'].pop(0)
+                await asyncio.create_task(run_command(animation))
+        if (datetime.datetime.utcnow() - QUEUE['last_request']).seconds > 60:
+            if earth_data.lights_out(on_offset=on_offset, hard_off=end_time_string):
                 if CURRENT_DISPLAY != 0:
                     LOGGER.info('Shutting down')
                     CURRENT_DISPLAY = 0
@@ -162,11 +166,11 @@ async def main_loop(start_time_string, end_time_string, animate):
                     CURRENT_DISPLAY = 0xFFFF
                     push_data(CURRENT_DISPLAY)
         if animate:
-            if (now - last_request).seconds > animate:
+            if (datetime.datetime.utcnow() - QUEUE['last_request']).seconds > animate:
                 current_animation += 1
                 if current_animation > 7:
                     current_animation = 1
-                last_request = now
+                QUEUE['last_request'] = datetime.datetime.utcnow()
                 handle_animation(f'/animation/{current_animation}', None)
         await asyncio.sleep(1)
         if WATCHDOG:
@@ -208,7 +212,7 @@ async def init_main(args, dispatcher):
             LOGGER.warning('Unable to establish endpoint, retrying')
             time.sleep(5)
 
-    await main_loop(args.start_time, args.end_time, args.animate)
+    await main_loop(args.on_offset, args.end_time, args.animate)
 
     transport.close()
 
@@ -218,9 +222,9 @@ if __name__ == '__main__':
     PARSER = argparse.ArgumentParser()
     PARSER.add_argument('--ip', default='10.0.1.47', help='The ip to listen on')
     PARSER.add_argument('--port', type=int, default=9999, help='The port to listen on')
-    PARSER.add_argument('--start_time', type=str, default='3:00', help='start time')
-    PARSER.add_argument('--end_time', type=str, default='8:00', help='end time')
-    PARSER.add_argument('--animate', type=int, default=0, help='animation period')
+    PARSER.add_argument('--on_offset', type=int, default=120, help='minutes before sunset')
+    PARSER.add_argument('--end_time', type=str, default='1:00', help='end time')
+    PARSER.add_argument('--animate', type=int, default=15 * 60, help='animation period')
     ARGS = PARSER.parse_args()
 
     ERRMSG = YRefParam()

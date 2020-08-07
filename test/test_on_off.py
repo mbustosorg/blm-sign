@@ -13,7 +13,7 @@
 """
 from unittest import TestCase
 
-import blmcontrol.earth_data as ed
+import blmcontrol.earth_data.earth_data as ed
 import datetime
 
 

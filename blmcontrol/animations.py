@@ -81,7 +81,7 @@ LOGGER = logging.getLogger('blm-sign')
 FAST = 0.05
 MEDIUM = 1.5
 SLOW = 3.0
-TIMES = 5
+TIMES = 10
 
 MESSAGE_LENGTH = 16
 
@@ -181,11 +181,9 @@ def flickering():
         primary = 0xFFFF
         secondary = 0xFFFF & ~letter
     for i in range(0, 45):
-        print('on')
         time_sample = random.random()
         push_data(primary)
         time.sleep(time_sample)
-        print('off')
         push_data(secondary)
         time.sleep(0.1)
     clear()
@@ -194,7 +192,7 @@ def flickering():
 def startup():
     """ Simulate starting up a neon light """
     start_time = [random.random() * 1.0 for x in range(0, 16)]
-    periods = [(x, x * 2, x * 3) for x in start_time]
+    periods = [(x, x * 2, x * 3, x * 4) for x in start_time]
     start = datetime.datetime.now()
     display = 0
     while display != 0xFFFF:
@@ -216,5 +214,5 @@ def startup():
             elif clock > x[0]:
                 display = display | 0x1 << i
         push_data(display)
-    time.sleep(60)
+    time.sleep(10)
     clear()
