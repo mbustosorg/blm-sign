@@ -2,3 +2,4 @@ smbus
 gpiozero
 yoctopuce
 pandas
+python-osc
