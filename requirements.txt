@@ -1,4 +1,4 @@
-smbus
+#smbus
 gpiozero
 yoctopuce
 pandas
