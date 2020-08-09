@@ -12,13 +12,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import asyncio
+import datetime
 from unittest import TestCase
+
 from mock import patch
 
-import blmcontrol.earth_data.earth_data
-import blmcontrol.blmcontrol
 import blmcontrol.animations
-import datetime
+import blmcontrol.blmcontrol
+import blmcontrol.earth_data.earth_data
 
 
 class TestAnimationOrder(TestCase):

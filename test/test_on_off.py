@@ -11,17 +11,20 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import datetime
 from unittest import TestCase
 
+from mock import patch
+
 import blmcontrol.earth_data.earth_data as ed
-import datetime
 
 
 class TestEarthData(TestCase):
 
-    def test_sun(self):
+    @patch('blmcontrol.earth_data.earth_data.current_time')
+    def test_sun(self, current_time_mock):
         """ Ensure able to get solar data """
-        now = datetime.datetime.now().replace(hour=12)
-        self.assertTrue(ed.lights_out(now))
-        now = datetime.datetime.now().replace(hour=8)
-        self.assertFalse(ed.lights_out(current_time=now, hard_off='2:30'))
+        current_time_mock.return_value = datetime.datetime.now().replace(hour=12)
+        self.assertTrue(ed.lights_out())
+        current_time_mock.return_value = datetime.datetime.now().replace(hour=8)
+        self.assertFalse(ed.lights_out(hard_off='2:30'))
