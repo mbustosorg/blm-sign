@@ -23,5 +23,5 @@ class TestEarthData(TestCase):
         """ Ensure able to get solar data """
         now = datetime.datetime.now().replace(hour=12)
         self.assertTrue(ed.lights_out(now))
-        now = datetime.datetime.now().replace(hour=1)
+        now = datetime.datetime.now().replace(hour=8)
         self.assertFalse(ed.lights_out(current_time=now, hard_off='2:30'))
