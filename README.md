@@ -1,6 +1,8 @@
 BLM Neon Voices (#blmneonvoices)
 =======================
 
+[![Build Status](https://travis-ci.org/mbustosorg/blm-sign.svg?branch=master)](https://travis-ci.org/mbustosorg/blm-sign)
+
 This is the open source repository (MIT License) that will contain all the construction information for the Black Lives Matter sign that is currently under contruction.  We'll be including software, bill of materials, assembly instructions, budget and tips and tricks on how to assemble a similar sign for your own statements for racial equity.  The project is entering the next phase of development and we'll keep updating here with more detailed information.
 
 [![blmsign](http://img.youtube.com/vi/cws-HkbJuXY/0.jpg)](https://www.youtube.com/watch?v=cws-HkbJuXY "blmsign")
