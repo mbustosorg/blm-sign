@@ -1,0 +1,13 @@
+
+
+1	3.3V		Expander Vin
+2	5V		GPS Vin
+3	SDA		Expander SDA
+5	SCL		Expander SCL
+6	GND	Expander GND
+7	GPIO4	GPS PPS
+8	TX		GPS RX
+10	RX		GPS TX
+14	GND	GPS GND
+32	GPIO12	Buzzer Active
+34	GND	Buzzer GND
