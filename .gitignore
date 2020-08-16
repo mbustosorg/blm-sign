@@ -8,3 +8,5 @@ __pycache__
 Pipfile
 *.log
 .ipynb*
+*~.skp
+AutoSave*.skp

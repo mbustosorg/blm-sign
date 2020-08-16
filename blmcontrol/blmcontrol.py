@@ -21,8 +21,8 @@ from typing import List, Any
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import *
-from blmcontrol.animations import *
-from blmcontrol.earth_data import earth_data
+from animations import *
+from earth_data import earth_data
 
 try:
     import RPi.GPIO as GPIO
@@ -65,7 +65,7 @@ def handle_letter(path: str, value: List[Any]):
     letter = path.split('/')[2]
     display_map = DISPLAY_MAPS[letter]
     CURRENT_DISPLAY = CURRENT_DISPLAY ^ display_map
-    QUEUE['last_request'] = earth_data.current_time()
+    QUEUE[LAST_REQUEST] = earth_data.current_time()
 
     push_data(CURRENT_DISPLAY)
 
@@ -85,7 +85,7 @@ def handle_word(path: str, value):
         CURRENT_DISPLAY = CURRENT_DISPLAY & ~display_map
     else:
         CURRENT_DISPLAY = CURRENT_DISPLAY | display_map
-    QUEUE['last_request'] = earth_data.current_time()
+    QUEUE[LAST_REQUEST] = earth_data.current_time()
 
     push_data(CURRENT_DISPLAY)
 
@@ -101,7 +101,7 @@ def handle_full(path: str = None, value=None):
         CURRENT_DISPLAY = 0x0000
     else:
         CURRENT_DISPLAY = 0xFFFF
-    QUEUE['last_request'] = earth_data.current_time()
+    QUEUE[LAST_REQUEST] = earth_data.current_time()
 
     push_data(CURRENT_DISPLAY)
 
@@ -122,21 +122,7 @@ async def run_command(number):
     global CURRENT_DISPLAY
 
     LOGGER.info(f'Starting {number}')
-    if number == 1:
-        first_then_scroll()
-    elif number == 2:
-        one_at_a_time()
-    elif number == 3:
-        window()
-    elif number == 4:
-        random_letters()
-    elif number == 5:
-        scroll()
-    elif number == 6:
-        #flickering()
-        window()
-    elif number == 7:
-        startup()
+    ANIMATION_ORDER[number]
     LOGGER.info(f'{number} complete')
     CURRENT_DISPLAY = 0
     handle_full()
@@ -149,7 +135,7 @@ async def animation_control(on_offset, end_time_string, animate, current_request
     lights_are_out = earth_data.lights_out(on_offset=on_offset, hard_off=end_time_string)
     if len(QUEUE[ANIMATIONS]) > 0:
         QUEUE[LAST_REQUEST] = earth_data.current_time()
-        if QUEUE[ANIMATIONS][-1] == 8:
+        if QUEUE[ANIMATIONS][-1] == max(ANIMATION_ORDER.keys()) + 1:
             QUEUE[ANIMATIONS] = []
             LOGGER.info(f'Cancel commanded, resetting')
         else:
@@ -171,7 +157,7 @@ async def animation_control(on_offset, end_time_string, animate, current_request
     if (animate > 0) & (not lights_are_out):
         if (earth_data.current_time() - QUEUE[LAST_REQUEST]).seconds > animate:
             QUEUE[CURRENT_ANIMATION] += 1
-            if QUEUE[CURRENT_ANIMATION] > 7:
+            if QUEUE[CURRENT_ANIMATION] > max(ANIMATION_ORDER.keys()):
                 QUEUE[CURRENT_ANIMATION] = 1
             QUEUE[LAST_REQUEST] = earth_data.current_time()
             handle_animation(f'/animation/{QUEUE[CURRENT_ANIMATION]}', None)

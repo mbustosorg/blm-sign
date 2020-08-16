@@ -27,17 +27,29 @@ BLACK_L = 0x0002
 BLACK_A = 0x0004
 BLACK_C = 0x0008
 BLACK_K = 0x0010
+BLACK = 0x001F
 LIVES_L = 0x0020
 LIVES_I = 0x0040
 LIVES_V = 0x0080
 LIVES_E = 0x0100
 LIVES_S = 0x0200
+LIVES = 0x03E0
 MATTER_M = 0x0400
 MATTER_A = 0x0800
 MATTER_T1 = 0x1000
 MATTER_T2 = 0x2000
 MATTER_E = 0x4000
 MATTER_R = 0x8000
+MATTER = 0xFC00
+HAND_1 = 0x00010000
+HAND_2 = 0x00020000
+HAND_3 = 0x00040000
+HAND_4 = 0x00080000
+HAND_5 = 0x00100000
+HAND_6 = 0x00200000
+ALL_HANDS = HAND_1 | HAND_2 | HAND_3 | HAND_4 | HAND_5 | HAND_6
+SPARE_1 = 0x00400000
+SPARE_2 = 0x00800000
 
 DISPLAY_MAPS = {
     'BLACK_B': BLACK_B,
@@ -58,9 +70,17 @@ DISPLAY_MAPS = {
     'MATTER_T2': MATTER_T2,
     'MATTER_E': MATTER_E,
     'MATTER_R': MATTER_R,
-    'MATTER': MATTER_M | MATTER_A | MATTER_T1 | MATTER_T2 | MATTER_E | MATTER_R
+    'MATTER': MATTER_M | MATTER_A | MATTER_T1 | MATTER_T2 | MATTER_E | MATTER_R,
+    'FULL': BLACK | LIVES | MATTER,
+    'HAND_1': HAND_1,
+    'HAND_2': HAND_2,
+    'HAND_3': HAND_3,
+    'HAND_4': HAND_4,
+    'HAND_5': HAND_5,
+    'HAND_6': HAND_6,
+    'SPARE_1': SPARE_1,
+    'SPARE_2': SPARE_2
 }
-FULL = DISPLAY_MAPS['BLACK'] | DISPLAY_MAPS['LIVES'] | DISPLAY_MAPS['MATTER']
 
 DEVICE1 = 0x26
 DEVICE2 = 0x27
@@ -118,7 +138,7 @@ def first_then_scroll():
     for i in range(0, int(TIMES)):
         push_data(display)
         time.sleep(SLOW)
-        push_data(FULL)
+        push_data(DISPLAY_MAPS['FULL'])
         time.sleep(SLOW)
     clear()
 
@@ -154,7 +174,7 @@ def scroll():
     """ Left to right one letter at time """
     for i in range(0, int(TIMES)):
         for j in range(0, MESSAGE_LENGTH):
-            bit = 0x1 << j
+            bit = (0x1 << j) | ALL_HANDS
             push_data(bit)
             time.sleep(FAST)
     clear()
@@ -165,7 +185,7 @@ def random_letters():
     samples = random.sample(range(0, MESSAGE_LENGTH), MESSAGE_LENGTH)
     for i in range(0, int(TIMES)):
         for j in samples:
-            bit = 0x1 << j
+            bit = (0x1 << j) | ALL_HANDS
             push_data(bit)
             time.sleep(FAST)
     clear()
@@ -216,3 +236,29 @@ def startup():
         push_data(display)
     time.sleep(10)
     clear()
+
+
+def hand_clasp():
+    """ Animate the hand clasp """
+    for i in range(0, int(TIMES)):
+        push_data(DISPLAY_MAPS['FULL'])
+        time.sleep(SLOW)
+        push_data(DISPLAY_MAPS['FULL'] | HAND_1 | HAND_6)
+        time.sleep(SLOW)
+        push_data(DISPLAY_MAPS['FULL'] | HAND_1 | HAND_6 | HAND_2 | HAND_5)
+        time.sleep(SLOW)
+        push_data(DISPLAY_MAPS['FULL'] | ALL_HANDS)
+        time.sleep(5)
+    clear()
+
+
+ANIMATION_ORDER = {
+    1: first_then_scroll,
+    2: one_at_a_time,
+    3: window,
+    4: random_letters,
+    5: scroll,
+    6: window,
+    7: startup,
+    8: hand_clasp
+}
