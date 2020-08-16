@@ -21,8 +21,8 @@ from typing import List, Any
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import *
-from animations import *
-from earth_data import earth_data
+from blmcontrol.animations import *
+from blmcontrol.earth_data import earth_data
 
 try:
     import RPi.GPIO as GPIO
