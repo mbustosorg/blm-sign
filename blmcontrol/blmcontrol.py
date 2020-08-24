@@ -97,10 +97,10 @@ def handle_full(path: str = None, value=None):
     global CURRENT_DISPLAY
     del value
 
-    if CURRENT_DISPLAY == 0xFFFF:
-        CURRENT_DISPLAY = 0x0000
+    if CURRENT_DISPLAY == 0xFFFFFFFF:
+        CURRENT_DISPLAY = 0xFFFF0000
     else:
-        CURRENT_DISPLAY = 0xFFFF
+        CURRENT_DISPLAY = 0xFFFFFFFF
     QUEUE[LAST_REQUEST] = earth_data.current_time()
 
     push_data(CURRENT_DISPLAY)
@@ -122,7 +122,7 @@ async def run_command(number):
     global CURRENT_DISPLAY
 
     LOGGER.info(f'Starting {number}')
-    ANIMATION_ORDER[number]
+    ANIMATION_ORDER[number]()
     LOGGER.info(f'{number} complete')
     CURRENT_DISPLAY = 0
     handle_full()
@@ -219,7 +219,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--port', type=int, default=9999, help='The port to listen on')
     PARSER.add_argument('--on_offset', type=int, default=-120, help='minutes before sunset')
     PARSER.add_argument('--end_time', type=str, default='8:00', help='end time')
-    PARSER.add_argument('--animate', type=int, default=15 * 60, help='animation period')
+    PARSER.add_argument('--animate', type=int, default=5 * 60, help='animation period')
     ARGS = PARSER.parse_args()
 
     ERRMSG = YRefParam()

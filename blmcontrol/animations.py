@@ -41,13 +41,12 @@ MATTER_T2 = 0x2000
 MATTER_E = 0x4000
 MATTER_R = 0x8000
 MATTER = 0xFC00
-HAND_1 = 0x00010000
-HAND_2 = 0x00020000
-HAND_3 = 0x00040000
-HAND_4 = 0x00080000
-HAND_5 = 0x00100000
-HAND_6 = 0x00200000
-ALL_HANDS = HAND_1 | HAND_2 | HAND_3 | HAND_4 | HAND_5 | HAND_6
+HAND_1 = 0x0080
+HAND_2 = 0x0001
+HAND_3 = 0x0040
+HAND_4 = 0x0020
+HAND_5 = 0x0008
+HAND_6 = 0x0004
 SPARE_1 = 0x00400000
 SPARE_2 = 0x00800000
 
@@ -78,6 +77,7 @@ DISPLAY_MAPS = {
     'HAND_4': HAND_4,
     'HAND_5': HAND_5,
     'HAND_6': HAND_6,
+    'ALL_HANDS': HAND_1 | HAND_2 | HAND_3 | HAND_4 | HAND_5 | HAND_6,
     'SPARE_1': SPARE_1,
     'SPARE_2': SPARE_2
 }
@@ -95,6 +95,10 @@ if SMBUS:
     BUS.write_byte_data(DEVICE1, IODIRB, 0x00)
     BUS.write_byte_data(DEVICE1, OLATA, 0)
     BUS.write_byte_data(DEVICE1, OLATB, 0)
+    BUS.write_byte_data(DEVICE2, IODIRA, 0x00)
+    BUS.write_byte_data(DEVICE2, IODIRB, 0x00)
+    BUS.write_byte_data(DEVICE2, OLATA, 0)
+    BUS.write_byte_data(DEVICE2, OLATB, 0)
 
 LOGGER = logging.getLogger('blm-sign')
 
@@ -125,6 +129,12 @@ def push_data(value):
     if SMBUS:
         BUS.write_byte_data(DEVICE1, OLATA, value & 0xFF)
         BUS.write_byte_data(DEVICE1, OLATB, (value & 0xFF00) >> 8)
+        if value == 0:
+            BUS.write_byte_data(DEVICE2, OLATA, 0xFF)
+            BUS.write_byte_data(DEVICE2, OLATB, 0xFF)
+        else:
+            BUS.write_byte_data(DEVICE2, OLATA, 0x00)
+            BUS.write_byte_data(DEVICE2, OLATB, 0x00)
 
 
 def clear():
@@ -174,7 +184,7 @@ def scroll():
     """ Left to right one letter at time """
     for i in range(0, int(TIMES)):
         for j in range(0, MESSAGE_LENGTH):
-            bit = (0x1 << j) | ALL_HANDS
+            bit = (0x1 << j) | DISPLAY_MAPS['ALL_HANDS']
             push_data(bit)
             time.sleep(FAST)
     clear()
@@ -185,7 +195,7 @@ def random_letters():
     samples = random.sample(range(0, MESSAGE_LENGTH), MESSAGE_LENGTH)
     for i in range(0, int(TIMES)):
         for j in samples:
-            bit = (0x1 << j) | ALL_HANDS
+            bit = (0x1 << j) | DISPLAY_MAPS['ALL_HANDS']
             push_data(bit)
             time.sleep(FAST)
     clear()
@@ -247,7 +257,7 @@ def hand_clasp():
         time.sleep(SLOW)
         push_data(DISPLAY_MAPS['FULL'] | HAND_1 | HAND_6 | HAND_2 | HAND_5)
         time.sleep(SLOW)
-        push_data(DISPLAY_MAPS['FULL'] | ALL_HANDS)
+        push_data(DISPLAY_MAPS['FULL'] | DISPLAY_MAPS['ALL_HANDS'])
         time.sleep(5)
     clear()
 
