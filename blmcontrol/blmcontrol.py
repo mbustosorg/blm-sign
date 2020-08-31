@@ -142,18 +142,18 @@ async def animation_control(on_offset, end_time_string, animate, current_request
             LOGGER.info(f"{len(QUEUE[ANIMATIONS])} commands in the queue")
             animation = QUEUE[ANIMATIONS].pop(0)
             await asyncio.create_task(run_command(animation))
-    if (earth_data.current_time() - QUEUE[LAST_REQUEST]).seconds > current_request_delay:
-        if lights_are_out:
-            if CURRENT_DISPLAY != 0:
-                QUEUE[ANIMATIONS] = []
-                LOGGER.info('Shutting down')
-                CURRENT_DISPLAY = 0
-                push_data(CURRENT_DISPLAY)
-        else:
-            if CURRENT_DISPLAY != 0xFFFF:
-                LOGGER.info('Starting up')
-                CURRENT_DISPLAY = 0xFFFF
-                push_data(CURRENT_DISPLAY)
+#    if (earth_data.current_time() - QUEUE[LAST_REQUEST]).seconds > current_request_delay:
+#        if lights_are_out:
+#            if CURRENT_DISPLAY != 0:
+#                QUEUE[ANIMATIONS] = []
+#                LOGGER.info('Shutting down')
+#                CURRENT_DISPLAY = 0
+#                push_data(CURRENT_DISPLAY)
+#        else:
+#            if CURRENT_DISPLAY != 0xFFFF:
+#                LOGGER.info('Starting up')
+#                CURRENT_DISPLAY = 0xFFFF
+#                push_data(CURRENT_DISPLAY)
     if (animate > 0) & (not lights_are_out):
         if (earth_data.current_time() - QUEUE[LAST_REQUEST]).seconds > animate:
             QUEUE[CURRENT_ANIMATION] += 1
@@ -161,6 +161,12 @@ async def animation_control(on_offset, end_time_string, animate, current_request
                 QUEUE[CURRENT_ANIMATION] = 1
             QUEUE[LAST_REQUEST] = earth_data.current_time()
             handle_animation(f'/animation/{QUEUE[CURRENT_ANIMATION]}', None)
+    else:
+        if CURRENT_DISPLAY != 0:
+            QUEUE[ANIMATIONS] = []
+            LOGGER.info('Shutting down')
+            CURRENT_DISPLAY = 0
+            push_data(CURRENT_DISPLAY)
     await asyncio.sleep(1)
     if WATCHDOG:
         WATCHDOG.resetWatchdog()

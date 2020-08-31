@@ -124,22 +124,22 @@ def set_timing(name: str, value):
         TIMES = int(value)
 
 
-def push_data(value):
+def push_data(value, hands=0xFF):
     """ Push data to I2C devices """
     if SMBUS:
         BUS.write_byte_data(DEVICE1, OLATA, value & 0xFF)
         BUS.write_byte_data(DEVICE1, OLATB, (value & 0xFF00) >> 8)
         if value == 0:
-            BUS.write_byte_data(DEVICE2, OLATA, 0xFF)
-            BUS.write_byte_data(DEVICE2, OLATB, 0xFF)
-        else:
             BUS.write_byte_data(DEVICE2, OLATA, 0x00)
             BUS.write_byte_data(DEVICE2, OLATB, 0x00)
+        else:
+            BUS.write_byte_data(DEVICE2, OLATA, hands)
+            BUS.write_byte_data(DEVICE2, OLATB, 0xFF)
 
 
 def clear():
     """ Clear the display """
-    push_data(0)
+    push_data(0xFFFF)
 
 
 def first_then_scroll():
@@ -251,24 +251,22 @@ def startup():
 def hand_clasp():
     """ Animate the hand clasp """
     for i in range(0, int(TIMES)):
-        push_data(DISPLAY_MAPS['FULL'])
-        time.sleep(SLOW)
-        push_data(DISPLAY_MAPS['FULL'] | HAND_1 | HAND_6)
-        time.sleep(SLOW)
-        push_data(DISPLAY_MAPS['FULL'] | HAND_1 | HAND_6 | HAND_2 | HAND_5)
-        time.sleep(SLOW)
-        push_data(DISPLAY_MAPS['FULL'] | DISPLAY_MAPS['ALL_HANDS'])
+        push_data(0xFFFF, HAND_1 | HAND_6)
+        time.sleep(SLOW - 0.25)
+        push_data(0xFFFF, HAND_1 | HAND_6 | HAND_2 | HAND_5)
+        time.sleep(SLOW - 0.25)
+        push_data(0xFFFF, DISPLAY_MAPS['ALL_HANDS'])
         time.sleep(5)
     clear()
 
 
 ANIMATION_ORDER = {
-    1: first_then_scroll,
-    2: one_at_a_time,
+    1: hand_clasp,
+    2: first_then_scroll,
     3: window,
-    4: random_letters,
-    5: scroll,
+    4: hand_clasp,
+    5: first_then_scroll,
     6: window,
     7: startup,
-    8: hand_clasp
+    8: first_then_scroll
 }
