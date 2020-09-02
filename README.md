@@ -9,6 +9,6 @@ The hands clasped graphic was designed by local artist [Abi Mustapha](https://ab
 
 [![blmsign](http://img.youtube.com/vi/QySEEyeX0T0/0.jpg)](https://www.youtube.com/watch?v=QySEEyeX0T0 "blmsign")
 
-The top level directory here is the Python code that manages the illumination and animation.  The support directory contains the CNC cut files, layouts for the OSC controller, design documents for the control box and budgeting information.
+The top level directory here is the Python code that manages the illumination and animation.  The support directory contains the CNC cut files, layouts for the [OSC](https://hexler.net/products/touchosc) controller, design documents for the control box and budgeting information.
 
 ![Location](support/images/rising_sun_location.png)
