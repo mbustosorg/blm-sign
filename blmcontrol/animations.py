@@ -105,7 +105,7 @@ LOGGER = logging.getLogger('blm-sign')
 FAST = 0.05
 MEDIUM = 1.5
 SLOW = 3.0
-TIMES = 10
+TIMES = 12
 
 MESSAGE_LENGTH = 16
 
@@ -265,8 +265,8 @@ ANIMATION_ORDER = {
     2: first_then_scroll,
     3: window,
     4: hand_clasp,
-    5: first_then_scroll,
+    5: one_at_a_time,
     6: window,
-    7: startup,
+    7: scroll,
     8: first_then_scroll
 }

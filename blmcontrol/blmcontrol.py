@@ -225,7 +225,7 @@ if __name__ == '__main__':
     PARSER.add_argument('--port', type=int, default=9999, help='The port to listen on')
     PARSER.add_argument('--on_offset', type=int, default=-120, help='minutes before sunset')
     PARSER.add_argument('--end_time', type=str, default='8:00', help='end time')
-    PARSER.add_argument('--animate', type=int, default=5 * 60, help='animation period')
+    PARSER.add_argument('--animate', type=int, default=30, help='animation period')
     ARGS = PARSER.parse_args()
 
     ERRMSG = YRefParam()
