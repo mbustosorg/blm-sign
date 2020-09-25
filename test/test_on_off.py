@@ -27,4 +27,4 @@ class TestEarthData(TestCase):
         current_time_mock.return_value = datetime.datetime.now().replace(hour=12)
         self.assertTrue(ed.lights_out())
         current_time_mock.return_value = datetime.datetime.now().replace(hour=8)
-        self.assertFalse(ed.lights_out(hard_off='2:30'))
+        self.assertFalse(ed.lights_out(hard_off='10:30'))
