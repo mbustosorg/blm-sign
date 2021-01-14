@@ -100,7 +100,7 @@ def handle_full(path: str = None, value=None):
     if CURRENT_DISPLAY == 0xFFFFFFFF:
         CURRENT_DISPLAY = 0xFFFF0000
     else:
-        CURRENT_DISPLAY = 0xFFFFFFFF
+        CURRENT_DISPLAY = DISPLAY_MAPS['FULL'] << 16 | DISPLAY_MAPS['ALL_HANDS']
     QUEUE[LAST_REQUEST] = earth_data.current_time()
 
     push_data(CURRENT_DISPLAY)
@@ -208,7 +208,7 @@ async def init_main(args, dispatcher):
             LOGGER.info(f'Server endpoint established')
             signal(0.05, 3)
             break
-        except:
+        except Exception as e:
             signal(0.5, 3)
             LOGGER.warning('Unable to establish endpoint, retrying')
             time.sleep(5)

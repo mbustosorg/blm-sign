@@ -22,25 +22,48 @@ try:
 except ImportError:
     SMBUS = False
 
-BLACK_B = 0x0001
-BLACK_L = 0x0002
-BLACK_A = 0x0004
-BLACK_C = 0x0008
-BLACK_K = 0x0010
-BLACK = 0x001F
-LIVES_L = 0x0020
-LIVES_I = 0x0040
-LIVES_V = 0x0080
-LIVES_E = 0x0100
-LIVES_S = 0x0200
-LIVES = 0x03E0
-MATTER_M = 0x0400
-MATTER_A = 0x0800
-MATTER_T1 = 0x1000
-MATTER_T2 = 0x2000
-MATTER_E = 0x4000
-MATTER_R = 0x8000
-MATTER = 0xFC00
+ENABLE_WORDS = True
+if ENABLE_WORDS:
+    BLACK_B = 0x0001
+    BLACK_L = 0x0002
+    BLACK_A = 0x0004
+    BLACK_C = 0x0008
+    BLACK_K = 0x0010
+    BLACK = 0x001F
+    LIVES_L = 0x0020
+    LIVES_I = 0x0040
+    LIVES_V = 0x0080
+    LIVES_E = 0x0100
+    LIVES_S = 0x0200
+    LIVES = 0x03E0
+    MATTER_M = 0x0400
+    MATTER_A = 0x0800
+    MATTER_T1 = 0x1000
+    MATTER_T2 = 0x2000
+    MATTER_E = 0x4000
+    MATTER_R = 0x8000
+    MATTER = 0xFC00
+else:
+    BLACK_B = 0
+    BLACK_L = 0
+    BLACK_A = 0
+    BLACK_C = 0
+    BLACK_K = 0
+    BLACK = 0
+    LIVES_L = 0
+    LIVES_I = 0
+    LIVES_V = 0
+    LIVES_E = 0
+    LIVES_S = 0
+    LIVES = 0
+    MATTER_M = 0
+    MATTER_A = 0
+    MATTER_T1 = 0
+    MATTER_T2 = 0
+    MATTER_E = 0
+    MATTER_R = 0
+    MATTER = 0
+
 HAND_1 = 0x0080
 HAND_2 = 0x0001
 HAND_3 = 0x0040
@@ -129,17 +152,13 @@ def push_data(value, hands=0xFF):
     if SMBUS:
         BUS.write_byte_data(DEVICE1, OLATA, value & 0xFF)
         BUS.write_byte_data(DEVICE1, OLATB, (value & 0xFF00) >> 8)
-        if value == 0:
-            BUS.write_byte_data(DEVICE2, OLATA, 0x00)
-            BUS.write_byte_data(DEVICE2, OLATB, 0x00)
-        else:
-            BUS.write_byte_data(DEVICE2, OLATA, hands)
-            BUS.write_byte_data(DEVICE2, OLATB, 0xFF)
+        BUS.write_byte_data(DEVICE2, OLATA, hands)
+        BUS.write_byte_data(DEVICE2, OLATB, 0xFF)
 
 
 def clear():
     """ Clear the display """
-    push_data(0xFFFF)
+    push_data(DISPLAY_MAPS['FULL'])
 
 
 def first_then_scroll():
@@ -251,11 +270,11 @@ def startup():
 def hand_clasp():
     """ Animate the hand clasp """
     for i in range(0, int(TIMES)):
-        push_data(0xFFFF, HAND_1 | HAND_6)
+        push_data(DISPLAY_MAPS['FULL'], HAND_1 | HAND_6)
         time.sleep(SLOW - 0.25)
-        push_data(0xFFFF, HAND_1 | HAND_6 | HAND_2 | HAND_5)
+        push_data(DISPLAY_MAPS['FULL'], HAND_1 | HAND_6 | HAND_2 | HAND_5)
         time.sleep(SLOW - 0.25)
-        push_data(0xFFFF, DISPLAY_MAPS['ALL_HANDS'])
+        push_data(DISPLAY_MAPS['FULL'], DISPLAY_MAPS['ALL_HANDS'])
         time.sleep(5)
     clear()
 
