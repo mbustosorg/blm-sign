@@ -22,7 +22,7 @@ try:
 except ImportError:
     SMBUS = False
 
-ENABLE_WORDS = True
+    ENABLE_WORDS = True
 if ENABLE_WORDS:
     BLACK_B = 0x0001
     BLACK_L = 0x0002
@@ -44,25 +44,25 @@ if ENABLE_WORDS:
     MATTER_R = 0x8000
     MATTER = 0xFC00
 else:
-    BLACK_B = 0
+    BLACK_B = 0x0001
     BLACK_L = 0
     BLACK_A = 0
     BLACK_C = 0
     BLACK_K = 0
-    BLACK = 0
-    LIVES_L = 0
+    BLACK = 0x0001
+    LIVES_L = 0x0020
     LIVES_I = 0
     LIVES_V = 0
     LIVES_E = 0
     LIVES_S = 0
-    LIVES = 0
-    MATTER_M = 0
+    LIVES = 0x0020
+    MATTER_M = 0x0400
     MATTER_A = 0
     MATTER_T1 = 0
     MATTER_T2 = 0
     MATTER_E = 0
     MATTER_R = 0
-    MATTER = 0
+    MATTER = 0x0400
 
 HAND_1 = 0x0080
 HAND_2 = 0x0001
@@ -203,7 +203,7 @@ def scroll():
     """ Left to right one letter at time """
     for i in range(0, int(TIMES)):
         for j in range(0, MESSAGE_LENGTH):
-            bit = (0x1 << j) | DISPLAY_MAPS['ALL_HANDS']
+            bit = 0x1 << j
             push_data(bit)
             time.sleep(FAST)
     clear()
@@ -214,7 +214,7 @@ def random_letters():
     samples = random.sample(range(0, MESSAGE_LENGTH), MESSAGE_LENGTH)
     for i in range(0, int(TIMES)):
         for j in samples:
-            bit = (0x1 << j) | DISPLAY_MAPS['ALL_HANDS']
+            bit = 0x1 << j
             push_data(bit)
             time.sleep(FAST)
     clear()

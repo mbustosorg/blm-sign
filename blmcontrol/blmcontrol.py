@@ -100,10 +100,10 @@ def handle_full(path: str = None, value=None):
     if CURRENT_DISPLAY == 0xFFFFFFFF:
         CURRENT_DISPLAY = 0xFFFF0000
     else:
-        CURRENT_DISPLAY = DISPLAY_MAPS['FULL'] << 16 | DISPLAY_MAPS['ALL_HANDS']
+        CURRENT_DISPLAY = DISPLAY_MAPS['FULL'] << 32 | DISPLAY_MAPS['ALL_HANDS']
     QUEUE[LAST_REQUEST] = earth_data.current_time()
 
-    push_data(CURRENT_DISPLAY)
+    push_data(DISPLAY_MAPS['FULL'])
 
     LOGGER.info(f'handle FULL')
 
@@ -166,7 +166,7 @@ async def animation_control(on_offset, end_time_string, animate, current_request
             QUEUE[ANIMATIONS] = []
             LOGGER.info('Shutting down')
             CURRENT_DISPLAY = 0
-            push_data(CURRENT_DISPLAY)
+            push_data(CURRENT_DISPLAY, 0)
     await asyncio.sleep(1)
     if WATCHDOG:
         WATCHDOG.resetWatchdog()
