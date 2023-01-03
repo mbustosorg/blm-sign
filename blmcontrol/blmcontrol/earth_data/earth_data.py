@@ -17,11 +17,14 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 SEVEN_HOURS = relativedelta(hours=7)
-sun_data = pd.read_csv(os.path.join(os.path.dirname(__file__), 'sunriseSunset.csv'), parse_dates=['sunrise', 'sunset'])
-sun_data['sunrise'] = sun_data['sunrise']
-sun_data['sunset'] = sun_data['sunset']
-sun_data['date'] = sun_data['sunrise'].dt.date
-sun_data = sun_data.set_index('date')
+sun_data = pd.read_csv(
+    os.path.join(os.path.dirname(__file__), "sunriseSunset.csv"),
+    parse_dates=["sunrise", "sunset"],
+)
+sun_data["sunrise"] = sun_data["sunrise"]
+sun_data["sunset"] = sun_data["sunset"]
+sun_data["date"] = sun_data["sunrise"].dt.date
+sun_data = sun_data.set_index("date")
 
 
 def current_time():
@@ -29,17 +32,17 @@ def current_time():
     return datetime.datetime.utcnow()
 
 
-def lights_out(time=None, on_offset: int = 0, hard_off: str = '10:00'):
+def lights_out(time=None, on_offset: int = 0, hard_off: str = "10:00"):
     """ Are we off now? """
     if not time:
         time = current_time()
     now = time.replace(year=2000)
-    off_time = datetime.datetime.strptime(hard_off, '%H:%M')
+    off_time = datetime.datetime.strptime(hard_off, "%H:%M")
     off_time = off_time.replace(year=2000, day=now.day, month=now.month)
     if off_time.time() < now.time():
         off_time = off_time + relativedelta(days=1)
     on_delta = relativedelta(minutes=on_offset)
-    on_time = sun_data.loc[now.date()]['sunset'] + on_delta
+    on_time = sun_data.loc[now.date()]["sunset"] + on_delta
     if on_time > off_time:
         on_time = on_time - relativedelta(days=1)
     return not ((now >= on_time) & (now <= off_time))

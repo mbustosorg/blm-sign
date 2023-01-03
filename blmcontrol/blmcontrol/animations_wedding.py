@@ -1,5 +1,5 @@
 """
-    Copyright (C) 2020 Mauricio Bustos (m@bustos.org)
+Copyright (C) 2022 Mauricio Bustos (m@bustos.org)
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -18,91 +18,39 @@ import time
 
 try:
     import smbus
+
     SMBUS = True
 except ImportError:
     SMBUS = False
 
-    ENABLE_WORDS = True
-if ENABLE_WORDS:
-    BLACK_B = 0x0001
-    BLACK_L = 0x0002
-    BLACK_A = 0x0004
-    BLACK_C = 0x0008
-    BLACK_K = 0x0010
-    BLACK = 0x001F
-    LIVES_L = 0x0020
-    LIVES_I = 0x0040
-    LIVES_V = 0x0080
-    LIVES_E = 0x0100
-    LIVES_S = 0x0200
-    LIVES = 0x03E0
-    MATTER_M = 0x0400
-    MATTER_A = 0x0800
-    MATTER_T1 = 0x1000
-    MATTER_T2 = 0x2000
-    MATTER_E = 0x4000
-    MATTER_R = 0x8000
-    MATTER = 0xFC00
-else:
-    BLACK_B = 0x0001
-    BLACK_L = 0
-    BLACK_A = 0
-    BLACK_C = 0
-    BLACK_K = 0
-    BLACK = 0x0001
-    LIVES_L = 0x0020
-    LIVES_I = 0
-    LIVES_V = 0
-    LIVES_E = 0
-    LIVES_S = 0
-    LIVES = 0x0020
-    MATTER_M = 0x0400
-    MATTER_A = 0
-    MATTER_T1 = 0
-    MATTER_T2 = 0
-    MATTER_E = 0
-    MATTER_R = 0
-    MATTER = 0x0400
-
-HAND_1 = 0x0080
-HAND_2 = 0x0001
-HAND_3 = 0x0040
-HAND_4 = 0x0020
-HAND_5 = 0x0008
-HAND_6 = 0x0004
-SPARE_1 = 0x00400000
-SPARE_2 = 0x00800000
+ENABLE_WORDS = True
+MARV_M = 0x0001
+MARV_A = 0x0002
+MARV_R = 0x0004
+MARV_V = 0x0008
+MARV = 0x000F
+HEART = 0x0010
+LINDS_L = 0x0020
+LINDS_I = 0x0040
+LINDS_N = 0x0080
+LINDS_D = 0x0100
+LINDS_S = 0x0200
+LINDS = 0x03F0
 
 DISPLAY_MAPS = {
-    'BLACK_B': BLACK_B,
-    'BLACK_L': BLACK_L,
-    'BLACK_A': BLACK_A,
-    'BLACK_C': BLACK_C,
-    'BLACK_K': BLACK_K,
-    'BLACK': BLACK_B | BLACK_L | BLACK_A | BLACK_C | BLACK_K,
-    'LIVES_L': LIVES_L,
-    'LIVES_I': LIVES_I,
-    'LIVES_V': LIVES_V,
-    'LIVES_E': LIVES_E,
-    'LIVES_S': LIVES_S,
-    'LIVES': LIVES_L | LIVES_I | LIVES_V | LIVES_E | LIVES_S,
-    'MATTER_M': MATTER_M,
-    'MATTER_A': MATTER_A,
-    'MATTER_T1': MATTER_T1,
-    'MATTER_T2': MATTER_T2,
-    'MATTER_E': MATTER_E,
-    'MATTER_R': MATTER_R,
-    'MATTER': MATTER_M | MATTER_A | MATTER_T1 | MATTER_T2 | MATTER_E | MATTER_R,
-    'FULL': BLACK | LIVES | MATTER,
-    'HAND_1': HAND_1,
-    'HAND_2': HAND_2,
-    'HAND_3': HAND_3,
-    'HAND_4': HAND_4,
-    'HAND_5': HAND_5,
-    'HAND_6': HAND_6,
-    'ALL_HANDS': HAND_1 | HAND_2 | HAND_3 | HAND_4 | HAND_5 | HAND_6,
-    'SPARE_1': SPARE_1,
-    'SPARE_2': SPARE_2
+    "MARV_M": MARV_M,
+    "MARV_A": MARV_A,
+    "MARV_R": MARV_R,
+    "MARV_V": MARV_V,
+    "MARV": MARV,
+    "HEART": HEART,
+    "LINDS_L": LINDS_L,
+    "LINDS_I": LINDS_I,
+    "LINDS_N": LINDS_N,
+    "LINDS_D": LINDS_D,
+    "LINDS_S": LINDS_S,
+    "LINDS": LINDS,
+    "FULL": MARV | HEART | LINDS,
 }
 
 DEVICE1 = 0x26
@@ -123,27 +71,27 @@ if SMBUS:
     BUS.write_byte_data(DEVICE2, OLATA, 0)
     BUS.write_byte_data(DEVICE2, OLATB, 0)
 
-LOGGER = logging.getLogger('blm-sign')
+LOGGER = logging.getLogger("blm-sign")
 
 FAST = 0.05
 MEDIUM = 1.5
 SLOW = 3.0
 TIMES = 12
 
-MESSAGE_LENGTH = 16
+MESSAGE_LENGTH = 10
 
 
 def set_timing(name: str, value):
     """ Set parameter values """
     global FAST, MEDIUM, SLOW, TIMES
-    LOGGER.info(f'{name}: {value}')
-    if name == 'fast':
+    LOGGER.info(f"{name}: {value}")
+    if name == "fast":
         FAST = value
-    if name == 'medium:':
+    if name == "medium:":
         MEDIUM = value
-    if name == 'slow':
+    if name == "slow":
         SLOW = value
-    if name == 'times':
+    if name == "times":
         TIMES = int(value)
 
 
@@ -158,29 +106,33 @@ def push_data(value, hands=0xFF):
 
 def clear():
     """ Clear the display """
-    push_data(DISPLAY_MAPS['FULL'])
+    push_data(DISPLAY_MAPS["FULL"])
 
 
 def first_then_scroll():
     """ First letter then full """
-    display = BLACK_B | LIVES_L | MATTER_M
+    display = MARV_M | HEART | LINDS_L
     for i in range(0, int(TIMES)):
         push_data(display)
         time.sleep(SLOW)
-        push_data(DISPLAY_MAPS['FULL'])
+        push_data(DISPLAY_MAPS["FULL"])
         time.sleep(SLOW)
     clear()
 
 
 def one_at_a_time():
-    """ One at at time """
+    """ One at a time """
+    delay = MEDIUM
     for i in range(0, int(TIMES)):
-        push_data(DISPLAY_MAPS['BLACK'])
-        time.sleep(MEDIUM)
-        push_data(DISPLAY_MAPS['LIVES'])
-        time.sleep(MEDIUM)
-        push_data(DISPLAY_MAPS['MATTER'])
-        time.sleep(MEDIUM)
+        push_data(DISPLAY_MAPS["MARV"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["HEART"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["LINDS"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["HEART"])
+        time.sleep(delay)
+        delay -= 0.1
     clear()
 
 
@@ -196,7 +148,7 @@ def window():
             bit = 0xFFFF << (j + 1)
             push_data(bit)
             time.sleep(FAST)
-    clear()
+        push_data(0)
 
 
 def scroll():
@@ -267,25 +219,18 @@ def startup():
     clear()
 
 
-def hand_clasp():
-    """ Animate the hand clasp """
-    for i in range(0, int(TIMES)):
-        push_data(DISPLAY_MAPS['FULL'], HAND_1 | HAND_6)
-        time.sleep(SLOW - 0.25)
-        push_data(DISPLAY_MAPS['FULL'], HAND_1 | HAND_6 | HAND_2 | HAND_5)
-        time.sleep(SLOW - 0.25)
-        push_data(DISPLAY_MAPS['FULL'], DISPLAY_MAPS['ALL_HANDS'])
-        time.sleep(5)
+def sparkle_off():
+    """Forwards then back"""
     clear()
 
 
 ANIMATION_ORDER = {
-    1: hand_clasp,
-    2: first_then_scroll,
-    3: window,
-    4: hand_clasp,
+    1: startup,
+    2: window,
+    3: first_then_scroll,
+    4: scroll,
     5: one_at_a_time,
-    6: window,
+    6: startup,
     7: scroll,
-    8: first_then_scroll
+    8: first_then_scroll,
 }
