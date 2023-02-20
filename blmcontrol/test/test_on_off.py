@@ -20,11 +20,10 @@ import blmcontrol.earth_data.earth_data as ed
 
 
 class TestEarthData(TestCase):
-
-    @patch('blmcontrol.earth_data.earth_data.current_time')
+    @patch("blmcontrol.earth_data.earth_data.current_time")
     def test_sun(self, current_time_mock):
         """ Ensure able to get solar data """
         current_time_mock.return_value = datetime.datetime.now().replace(hour=12)
         self.assertTrue(ed.lights_out())
         current_time_mock.return_value = datetime.datetime.now().replace(hour=8)
-        self.assertFalse(ed.lights_out(hard_off='10:30'))
+        self.assertFalse(ed.lights_out(hard_off="10:30"))

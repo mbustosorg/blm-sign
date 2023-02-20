@@ -23,29 +23,32 @@ import blmcontrol.earth_data.earth_data
 
 
 class TestAnimationOrder(TestCase):
-
-    @patch('blmcontrol.earth_data.earth_data.current_time')
+    @patch("blmcontrol.earth_data.earth_data.current_time")
     def test_animation_start(self, current_time_mock):
         """ Check if animation starts on time """
         current_time_mock.return_value = datetime.datetime.now().replace(hour=12)
         self.assertTrue(blmcontrol.earth_data.earth_data.lights_out())
         current_time_mock.return_value = datetime.datetime.now().replace(hour=8)
-        self.assertFalse(blmcontrol.earth_data.earth_data.lights_out(hard_off='10:30'))
+        self.assertFalse(blmcontrol.earth_data.earth_data.lights_out(hard_off="10:30"))
 
-    @patch('blmcontrol.earth_data.earth_data.current_time')
+    @patch("blmcontrol.earth_data.earth_data.current_time")
     def test_animation_select(self, current_time_mock):
         """ Check if animation starts correct one """
         blmcontrol.animations.TIMES = 1
-        current_time_mock.return_value = datetime.datetime.now().replace(hour=10, minute=0)
-        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, '10:30', 10, 10))
-        self.assertTrue(blmcontrol.blmcontrol.QUEUE['animations'] == [1])
-        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, '10:30', 10, 10))
-        self.assertTrue(blmcontrol.blmcontrol.QUEUE['animations'] == [])
-        current_time_mock.return_value = datetime.datetime.now().replace(hour=10, minute=15)
-        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, '10:30', 10, 10))
-        self.assertTrue(blmcontrol.blmcontrol.QUEUE['animations'] == [2])
-        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, '10:30', 10, 10))
-        self.assertTrue(blmcontrol.blmcontrol.QUEUE['animations'] == [])
+        current_time_mock.return_value = datetime.datetime.now().replace(
+            hour=10, minute=0
+        )
+        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, "10:30", 10, 10))
+        self.assertTrue(blmcontrol.blmcontrol.QUEUE["animations"] == [1])
+        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, "10:30", 10, 10))
+        self.assertTrue(blmcontrol.blmcontrol.QUEUE["animations"] == [])
+        current_time_mock.return_value = datetime.datetime.now().replace(
+            hour=10, minute=15
+        )
+        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, "10:30", 10, 10))
+        self.assertTrue(blmcontrol.blmcontrol.QUEUE["animations"] == [2])
+        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, "10:30", 10, 10))
+        self.assertTrue(blmcontrol.blmcontrol.QUEUE["animations"] == [])
         current_time_mock.return_value = datetime.datetime.now().replace(hour=12)
-        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, '10:30', 10, 10))
+        asyncio.run(blmcontrol.blmcontrol.animation_control(-120, "10:30", 10, 10))
         self.assertEqual(blmcontrol.blmcontrol.CURRENT_DISPLAY, 0)

@@ -11,10 +11,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+# pylint: disable=logging-fstring-interpolation, f-string-without-interpolation
 import argparse
 import asyncio
 import logging
+import time
 from functools import partial
 from logging import Logger
 from logging.handlers import RotatingFileHandler
@@ -22,13 +23,17 @@ from typing import List, Any
 
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
-from yoctopuce.yocto_watchdog import *
-from blmcontrol.animations import *
-#from blmcontrol.animations_wedding import *
+from yoctopuce.yocto_watchdog import YAPI, YRefParam, YWatchdog
+from blmcontrol.animation_utils import set_timing, push_data, DISPLAY_MAPS
+#from blmcontrol.animations import ANIMATION_ORDER, set_display_maps
+from blmcontrol.animation_patrick import ANIMATION_ORDER, set_display_maps
+
+# from blmcontrol.animations_wedding import ANIMATION_ORDER, DISPLAY_MAPS
+
 from blmcontrol.earth_data import earth_data
 
 try:
-    import RPi.GPIO as GPIO
+    from RPi import GPIO
 
     RPI = True
 except ImportError:
@@ -97,17 +102,11 @@ def handle_word(path: str, value):
 def handle_full(path: str = None, value=None):
     """ Toggle full display """
     global current_display
-    del value
+    del value, path
 
-    if current_display == 0xFFFFFFFF:
-        current_display = 0xFFFF0000
-    else:
-        if "ALL_HANDS" in DISPLAY_MAPS:
-            current_display = DISPLAY_MAPS["FULL"] << 32 | DISPLAY_MAPS["ALL_HANDS"]
-        else:
-            current_display = DISPLAY_MAPS["FULL"] << 32
+    current_display = 0xFFFFFFFF
     QUEUE[LAST_REQUEST] = earth_data.current_time()
-    push_data(DISPLAY_MAPS["FULL"])
+    push_data(0xFFFFFFFF)
 
 
 def handle_animation(path: str, value):
@@ -125,7 +124,9 @@ async def run_command(number):
 
     function = ANIMATION_ORDER[number]
     if isinstance(function, partial):
-        LOGGER.info(f"Starting {number} - {function.func.__name__} {str(function.keywords)}")
+        LOGGER.info(
+            f"Starting {number} - {function.func.__name__} {str(function.keywords)}"
+        )
     else:
         LOGGER.info(f"Starting {number} - {function.__name__}")
     function()
@@ -137,6 +138,7 @@ async def run_command(number):
 async def main_loop(args):
     """ Main execution loop """
     global current_display, QUEUE
+    set_display_maps()
 
     def animate_interval(index: int) -> int:
         """Next animation interval"""
@@ -145,12 +147,14 @@ async def main_loop(args):
         return args.animate
 
     while True:
-        #push_data(0, 0)
-        #await asyncio.sleep(1)
-        #continue
+        # push_data(0, 0)
+        # await asyncio.sleep(1)
+        # continue
         lights_are_out = False
         if args.enable_sun:
-            lights_are_out = earth_data.lights_out(on_offset=args.on_offset, hard_off=args.end_time)
+            lights_are_out = earth_data.lights_out(
+                on_offset=args.on_offset, hard_off=args.end_time
+            )
         if len(QUEUE[ANIMATIONS]) > 0:
             QUEUE[LAST_REQUEST] = earth_data.current_time()
             if QUEUE[ANIMATIONS][-1] == max(ANIMATION_ORDER.keys()) + 1:
@@ -173,7 +177,9 @@ async def main_loop(args):
         #                CURRENT_DISPLAY = 0xFFFF
         #                push_data(CURRENT_DISPLAY)
         if not lights_are_out:
-            if (earth_data.current_time() - QUEUE[LAST_REQUEST]).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1):
+            if (
+                earth_data.current_time() - QUEUE[LAST_REQUEST]
+            ).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1):
                 signal(0.25, 2)
                 QUEUE[CURRENT_ANIMATION] += 1
                 if QUEUE[CURRENT_ANIMATION] > max(ANIMATION_ORDER.keys()):
@@ -194,7 +200,7 @@ async def main_loop(args):
 def signal(length, count):
     """ Signal status on buzzer """
     if RPI:
-        for j in range(0, count):
+        for _ in range(0, count):
             GPIO.output(12, True)
             time.sleep(length)
             GPIO.output(12, False)
@@ -221,7 +227,7 @@ async def init_main(args, dispatcher):
             LOGGER.info(f"Server endpoint established")
             signal(0.05, 3)
             break
-        except Exception as e:
+        except Exception as _:
             signal(0.5, 3)
             LOGGER.warning("Unable to establish endpoint, retrying")
             time.sleep(5)
@@ -240,12 +246,25 @@ if __name__ == "__main__":
         "--on_offset", type=int, default=-120, help="minutes before sunset"
     )
     PARSER.add_argument("--end_time", type=str, default="11:00", help="end time")
-    PARSER.add_argument("--animate", type=int, default=30, help="seconds between animations")
-    PARSER.add_argument("--animate_intervals", type=int, nargs="+", help="list of seconds between intervals")
-    PARSER.add_argument("--enable_sun", type=int, default=1, help="enable use of solar timing")
+    PARSER.add_argument(
+        "--animate", type=int, default=30, help="seconds between animations"
+    )
+    PARSER.add_argument(
+        "--animate_intervals",
+        type=int,
+        nargs="+",
+        help="list of seconds between intervals",
+    )
+    PARSER.add_argument(
+        "--enable_sun", type=int, default=1, help="enable use of solar timing"
+    )
     ARGS = PARSER.parse_args()
 
-    assert True if not ARGS.animate_intervals else len(ARGS.animate_intervals) == len(ANIMATION_ORDER)
+    assert (
+        True
+        if not ARGS.animate_intervals
+        else len(ARGS.animate_intervals) == len(ANIMATION_ORDER)
+    )
 
     ERRMSG = YRefParam()
     if YAPI.RegisterHub("usb", ERRMSG) != YAPI.SUCCESS:
