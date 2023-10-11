@@ -25,10 +25,12 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import YAPI, YRefParam, YWatchdog
 from blmcontrol.animation_utils import set_timing, push_data, DISPLAY_MAPS
+from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps
 #from blmcontrol.animations import ANIMATION_ORDER, set_display_maps
-from blmcontrol.animation_patrick import ANIMATION_ORDER, set_display_maps
-
-# from blmcontrol.animations_wedding import ANIMATION_ORDER, DISPLAY_MAPS
+#from blmcontrol.animation_patrick import ANIMATION_ORDER, set_display_maps
+#from blmcontrol.animation_hose import ANIMATION_ORDER, set_display_maps
+#from blmcontrol.animation_vandy import ANIMATION_ORDER, set_display_maps
+#from blmcontrol.animations_wedding import ANIMATION_ORDER, DISPLAY_MAPS
 
 from blmcontrol.earth_data import earth_data
 
@@ -55,7 +57,7 @@ current_display = 0x0000
 ANIMATIONS = "animations"
 LAST_REQUEST = "last_request"
 CURRENT_ANIMATION = "current_animation"
-QUEUE = {ANIMATIONS: [], LAST_REQUEST: earth_data.current_time(), CURRENT_ANIMATION: 0}
+QUEUE = {ANIMATIONS: [], LAST_REQUEST: earth_data.current_time(), CURRENT_ANIMATION: 1}
 WATCHDOG = None
 
 
@@ -180,7 +182,7 @@ async def main_loop(args):
             if (
                 earth_data.current_time() - QUEUE[LAST_REQUEST]
             ).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1):
-                signal(0.25, 2)
+                signal(0.05, 2)
                 QUEUE[CURRENT_ANIMATION] += 1
                 if QUEUE[CURRENT_ANIMATION] > max(ANIMATION_ORDER.keys()):
                     QUEUE[CURRENT_ANIMATION] = 1
@@ -214,23 +216,23 @@ async def init_main(args, dispatcher):
         try:
             server = AsyncIOOSCUDPServer((args.ip, args.port), dispatcher, loop)
             LOGGER.info(f"Serving on {args.ip}:{args.port}")
-            signal(0.05, 3)
+            signal(0.05, 2)
             break
         except:
-            signal(0.5, 3)
+            signal(0.4, 2)
             LOGGER.warning(f"Unable to bind to {args.ip}, retrying {i + 1}")
             time.sleep(3)
 
-    for i in range(0, 5):
-        try:
-            transport, _ = await server.create_serve_endpoint()
-            LOGGER.info(f"Server endpoint established")
-            signal(0.05, 3)
-            break
-        except Exception as _:
-            signal(0.5, 3)
-            LOGGER.warning("Unable to establish endpoint, retrying")
-            time.sleep(5)
+    #for i in range(0, 5):
+    #    try:
+    #        transport, _ = await server.create_serve_endpoint()
+    #        LOGGER.info(f"Server endpoint established")
+    #        signal(0.05, 2)
+    #        break
+    #    except Exception as _:
+    #        signal(0.4, 2)
+    #        LOGGER.warning("Unable to establish endpoint, retrying")
+    #        time.sleep(5)
 
     await main_loop(args)
 
@@ -286,7 +288,7 @@ if __name__ == "__main__":
     if RPI:
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(12, GPIO.OUT)
-        signal(0.25, 2)
+        signal(0.15, 2)
 
     handle_full("", None)
 

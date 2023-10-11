@@ -23,6 +23,8 @@ try:
 except ImportError:
     SMBUS = False
 
+LOGGER = logging.getLogger("blm-sign")
+
 DEVICE1 = 0x26
 DEVICE2 = 0x27
 IODIRA = 0x00
@@ -31,11 +33,17 @@ OLATA = 0x14
 OLATB = 0x15
 
 if SMBUS:
-    BUS = smbus.SMBus(1)
-    BUS.write_byte_data(DEVICE1, IODIRA, 0x00)
-    BUS.write_byte_data(DEVICE1, IODIRB, 0x00)
-    BUS.write_byte_data(DEVICE1, OLATA, 0)
-    BUS.write_byte_data(DEVICE1, OLATB, 0)
+    try:
+        BUS = smbus.SMBus(0)
+    except:
+        BUS = smbus.SMBus(1)
+    try:
+        BUS.write_byte_data(DEVICE1, IODIRA, 0x00)
+        BUS.write_byte_data(DEVICE1, IODIRB, 0x00)
+        BUS.write_byte_data(DEVICE1, OLATA, 0)
+        BUS.write_byte_data(DEVICE1, OLATB, 0)
+    except:
+        LOGGER.info("Unable to initialize DEVICE1 I2C")
     BUS.write_byte_data(DEVICE2, IODIRA, 0x00)
     BUS.write_byte_data(DEVICE2, IODIRB, 0x00)
     BUS.write_byte_data(DEVICE2, OLATA, 0)
@@ -46,8 +54,6 @@ MEDIUM = 1.5
 SLOW = 3.0
 TIMES = 12
 MESSAGE_LENGTH = 0
-
-LOGGER = logging.getLogger("blm-sign")
 
 DISPLAY_MAPS = {}
 
@@ -69,11 +75,14 @@ def set_timing(name: str, value):
 def push_data(value, hands=0xFF):
     """ Push data to I2C devices """
     if SMBUS:
-        BUS.write_byte_data(DEVICE1, OLATA, value & 0xFF)
-        BUS.write_byte_data(DEVICE1, OLATB, (value & 0xFF00) >> 8)
-        BUS.write_byte_data(DEVICE2, OLATA, hands)
-        BUS.write_byte_data(DEVICE2, OLATB, 0xFF)
-    print(f"{int('{:016b}'.format(value)[::-1], 2):#018b}", end="\r")
+        try:
+            BUS.write_byte_data(DEVICE1, OLATA, value & 0xFF)
+            BUS.write_byte_data(DEVICE1, OLATB, (value & 0xFF00) >> 8)
+            BUS.write_byte_data(DEVICE2, OLATA, hands)
+            BUS.write_byte_data(DEVICE2, OLATB, 0xFF)
+        except:
+            BUS.write_byte_data(DEVICE2, OLATB, value & 0xFF)
+    #print(f"{int('{:016b}'.format(value)[::-1], 2):#018b}", end="\r")
 
 
 def clear():

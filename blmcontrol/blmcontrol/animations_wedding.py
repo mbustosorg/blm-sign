@@ -24,6 +24,7 @@ from blmcontrol.animation_utils import (
     startup,
     DISPLAY_MAPS,
 )
+import blmcontrol.animation_utils
 
 ENABLE_WORDS = True
 MARV_M = 0x0001
@@ -39,7 +40,7 @@ LINDS_D = 0x0100
 LINDS_S = 0x0200
 LINDS = 0x03F0
 
-MESSAGE_LENGTH = 10
+blmcontrol.animation_utils.MESSAGE_LENGTH = 10
 
 
 def set_display_maps():

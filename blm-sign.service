@@ -1,0 +1,13 @@
+Description=blm-sign
+After=network.target
+
+[Service]
+ExecStart=/home/mauricio/projects/blm-sign/startup.sh
+WorkingDirectory=/home/mauricio/projects/blm-sign
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=root
+
+[Install]
+WantedBy=multi-user.target

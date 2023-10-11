@@ -26,13 +26,7 @@ from blmcontrol.animation_utils import (
     DISPLAY_MAPS,
     startup,
 )
-
-try:
-    import smbus
-
-    SMBUS = True
-except ImportError:
-    SMBUS = False
+import blmcontrol.animation_utils
 
 ENABLE_WORDS = True
 if ENABLE_WORDS:
@@ -90,7 +84,7 @@ MEDIUM = 1.5
 SLOW = 3.0
 TIMES = 12
 
-MESSAGE_LENGTH = 16
+blmcontrol.animation_utils.MESSAGE_LENGTH = 16
 
 
 def set_display_maps():
@@ -156,11 +150,11 @@ def window(first_on: bool = False):
     display = BLACK_B | LIVES_L | MATTER_M if first_on else 0
     for _ in range(0, int(TIMES)):
         bit = 0
-        for j in range(0, MESSAGE_LENGTH):
+        for j in range(0, blmcontrol.animation_utils.MESSAGE_LENGTH):
             bit = bit | 0x1 << j
             push_data(bit | display)
             time.sleep(FAST)
-        for j in range(0, MESSAGE_LENGTH):
+        for j in range(0, blmcontrol.animation_utils.MESSAGE_LENGTH):
             bit = 0xFFFF & (0xFFFF << (j + 1))
             push_data(bit | display)
             time.sleep(FAST)
@@ -179,10 +173,10 @@ def window_words(first_on: bool = False):
 
     for _ in range(0, int(TIMES)):
         bit = 0
-        for j in range(0, MESSAGE_LENGTH):
+        for j in range(0, blmcontrol.animation_utils.MESSAGE_LENGTH):
             bit = bit | 0x1 << j
             overlay_on_words()
-        for j in range(0, MESSAGE_LENGTH):
+        for j in range(0, blmcontrol.animation_utils.MESSAGE_LENGTH):
             bit = 0xFFFF << (j + 1)
             overlay_on_words()
     clear()
