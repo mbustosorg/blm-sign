@@ -67,7 +67,7 @@ def set_display_maps():
 
 def know():
     """Use KNOW"""
-    delay = MEDIUM
+    delay = MEDIUM / 2
     for _ in range(0, int(TIMES / 3)):
         push_data(DISPLAY_MAPS["KNOW_1"])
         time.sleep(delay)
@@ -86,7 +86,7 @@ def know():
 
 def no():
     """Use NO"""
-    delay = MEDIUM
+    delay = MEDIUM / 2
     for _ in range(0, int(TIMES / 3)):
         push_data(DISPLAY_MAPS["NO_1"])
         time.sleep(delay)
@@ -118,26 +118,46 @@ def toggle():
     clear()
 
 
-def toggle1():
+def sequence_through():
     """Toggle between two messages"""
-    delay = 0.5
-    for _ in range(0, int(TIMES / 2)):
-        push_data(DISPLAY_MAPS["KW_1"])
+    delay = MEDIUM
+    for _ in range(0, int(TIMES / 3)):
+        push_data(DISPLAY_MAPS["KNOW_1"] | DISPLAY_MAPS["JUSTICE"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["NO_1"])
+        push_data(DISPLAY_MAPS["KNOW_2"] | DISPLAY_MAPS["PEACE"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["JUS"])
+        push_data(0)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["TICE"])
+        push_data(DISPLAY_MAPS["NO_1"] | DISPLAY_MAPS["JUSTICE"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["KW_2"])
+        push_data(DISPLAY_MAPS["NO_2"] | DISPLAY_MAPS["PEACE"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["NO_2"])
+        push_data(0)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["PEA"])
+    clear()
+
+
+def diagonal():
+    """Diagonal between two messages"""
+    delay = 2.0
+    for _ in range(0, int(TIMES / 3)):
+        push_data(DISPLAY_MAPS["KNOW_2"] | DISPLAY_MAPS["JUSTICE"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["CE"])
+        push_data(DISPLAY_MAPS["KNOW_1"] | DISPLAY_MAPS["PEACE"])
         time.sleep(delay)
+        push_data(DISPLAY_MAPS["NO_2"] | DISPLAY_MAPS["JUSTICE"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["NO_1"] | DISPLAY_MAPS["PEACE"])
+        time.sleep(delay)
+        push_data(0)
+        time.sleep(delay)
+    clear()
+
+
+def pj():
+    """Just Peace and Justice"""
+    push_data(DISPLAY_MAPS["PEACE"] | DISPLAY_MAPS["JUSTICE"])
+    time.sleep(100)
     clear()
 
 
@@ -145,4 +165,8 @@ ANIMATION_ORDER = {
     1: no,
     2: know,
     3: toggle,
+    4: sequence_through,
+    5: diagonal,
+    6: pj,
+    6: no,
 }
