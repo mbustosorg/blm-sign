@@ -57,6 +57,7 @@ MEDIUM = 1.5
 SLOW = 3.0
 TIMES = 12
 MESSAGE_LENGTH = 0
+MAX_PWM = 3900
 
 DISPLAY_MAPS = {}
 
@@ -92,7 +93,7 @@ def push_data_pwm(value, hands=0xFF):
     """ Push data to I2C devices """
     for i in range(8):
         if value & 1 << i:
-            pwm.set_pwm(i, 0, gamma(4095))
+            pwm.set_pwm(i, 0, gamma(MAX_PWM))
         else:
             pwm.set_pwm(i, 0, 0)
 

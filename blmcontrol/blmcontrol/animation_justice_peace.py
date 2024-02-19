@@ -24,6 +24,7 @@ from blmcontrol.animation_utils import (
     pwm,
     set_pwm,
     gamma,
+    MAX_PWM,
 )
 import blmcontrol.animation_utils
 
@@ -51,11 +52,11 @@ blmcontrol.animation_utils.MESSAGE_LENGTH = 5
 def push_data(value, instant=True, descending=False, ascending=False, steps=80):
     """ Push data to I2C devices """
     if instant:
-        steps = [4090]
+        steps = [MAX_PWM]
     elif descending:
-        steps = list(map(lambda x: 4090 - float(x) / float(steps) * 4090.0, range(steps)))
+        steps = list(map(lambda x: MAX_PWM - float(x) / float(steps) * float(MAX_PWM), range(steps)))
     elif ascending:
-        steps = list(map(lambda x: float(x) / float(steps) * 4090.0, range(steps)))
+        steps = list(map(lambda x: float(x) / float(steps) * float(MAX_PWM), range(steps)))
     for step in steps:
         for i in range(8):
             if value & 1 << i:
@@ -85,19 +86,23 @@ def set_display_maps():
 
 def know():
     """Use KNOW"""
-    delay = MEDIUM / 2
+    delay = MEDIUM / 4
     for _ in range(0, int(TIMES / 3)):
-        push_data(DISPLAY_MAPS["KNOW_1"], instant=False, descending=True)
+        push_data(DISPLAY_MAPS["KNOW_1"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, descending=True)
+        push_data(DISPLAY_MAPS["KNOW_1"], instant=False, descending=True, steps=20)
+        push_data(DISPLAY_MAPS["JUSTICE"])
         time.sleep(delay)
-        push_data(0, instant=False, descending=True)
+        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, descending=True, steps=20)
+        push_data(0)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["KNOW_2"], instant=False, descending=True)
+        push_data(DISPLAY_MAPS["KNOW_2"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["PEACE"], instant=False, descending=True)
+        push_data(DISPLAY_MAPS["KNOW_2"], instant=False, descending=True, steps=20)
+        push_data(DISPLAY_MAPS["PEACE"])
         time.sleep(delay * 1.5)
-        push_data(0, instant=False, descending=True)
+        push_data(DISPLAY_MAPS["PEACE"], instant=False, descending=True, steps=20)
+        push_data(0)
         time.sleep(delay)
     clear()
 
@@ -106,16 +111,24 @@ def no():
     """Use NO"""
     delay = MEDIUM / 2
     for _ in range(0, int(TIMES / 3)):
-        push_data(DISPLAY_MAPS["NO_1"], instant=False, descending=True)
+        push_data(DISPLAY_MAPS["NO_1"], instant=False, ascending=True, steps=5)
+        push_data(DISPLAY_MAPS["NO_1"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, descending=True)
+        push_data(DISPLAY_MAPS["NO_1"], instant=False, descending=True, steps=20)
+        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, ascending=True, steps=5)
+        push_data(DISPLAY_MAPS["JUSTICE"])
         time.sleep(delay)
+        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, descending=True, steps=20)
         push_data(0)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["NO_2"], instant=False, descending=True)
+        push_data(DISPLAY_MAPS["NO_2"], instant=False, ascending=True, steps=5)
+        push_data(DISPLAY_MAPS["NO_2"])
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["PEACE"], instant=False, descending=True)
+        push_data(DISPLAY_MAPS["NO_2"], instant=False, descending=True, steps=20)
+        push_data(DISPLAY_MAPS["PEACE"], instant=False, ascending=True, steps=5)
+        push_data(DISPLAY_MAPS["PEACE"])
         time.sleep(delay * 1.5)
+        push_data(DISPLAY_MAPS["PEACE"], instant=False, descending=True, steps=20)
         push_data(0)
         time.sleep(delay)
     clear()
@@ -142,14 +155,18 @@ def sequence_through():
     for _ in range(0, int(TIMES / 3)):
         push_data(DISPLAY_MAPS["KNOW_1"] | DISPLAY_MAPS["JUSTICE"])
         time.sleep(delay)
+        push_data(DISPLAY_MAPS["KNOW_1"] | DISPLAY_MAPS["JUSTICE"], instant=False, descending=True)
         push_data(DISPLAY_MAPS["KNOW_2"] | DISPLAY_MAPS["PEACE"])
         time.sleep(delay)
+        push_data(DISPLAY_MAPS["KNOW_2"] | DISPLAY_MAPS["PEACE"], instant=False, descending=True)
         push_data(0)
         time.sleep(delay)
         push_data(DISPLAY_MAPS["NO_1"] | DISPLAY_MAPS["JUSTICE"])
         time.sleep(delay)
+        push_data(DISPLAY_MAPS["NO_1"] | DISPLAY_MAPS["JUSTICE"], instant=False, descending=True)
         push_data(DISPLAY_MAPS["NO_2"] | DISPLAY_MAPS["PEACE"])
         time.sleep(delay)
+        push_data(DISPLAY_MAPS["NO_2"] | DISPLAY_MAPS["PEACE"], instant=False, descending=True)
         push_data(0)
         time.sleep(delay)
     clear()
@@ -175,7 +192,7 @@ def diagonal():
 def pj():
     """Just Peace and Justice"""
     push_data(DISPLAY_MAPS["PEACE"] | DISPLAY_MAPS["JUSTICE"])
-    time.sleep(100)
+    time.sleep(20)
     clear()
 
 
@@ -186,5 +203,4 @@ ANIMATION_ORDER = {
     4: sequence_through,
     5: diagonal,
     6: pj,
-    7: no,
 }

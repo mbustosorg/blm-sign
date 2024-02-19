@@ -1,5 +1,5 @@
 """
-    Copyright (C) 2023 Mauricio Bustos (m@bustos.org)
+    Copyright (C) 2024 Mauricio Bustos (m@bustos.org)
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -27,7 +27,7 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 from blmcontrol.PCA9685 import PCA9685
-from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps, set_pwm
+from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps, set_pwm, clear
 
 
 try:
@@ -123,6 +123,9 @@ async def main_loop(args):
             return args.animate_intervals[index]
         return args.animate
 
+    QUEUE[LAST_REQUEST] = datetime.datetime.now()
+    handle_animation(f"/animation/{QUEUE[CURRENT_ANIMATION]}", None)
+
     while True:
         if len(QUEUE[ANIMATIONS]) > 0:
             QUEUE[LAST_REQUEST] = datetime.datetime.now()
@@ -154,6 +157,8 @@ def signal(length, count):
 
 async def init_main(args, dispatcher):
     """ Initialization routine """
+    clear()
+
     for i in range(0, 5):
         try:
             server = AsyncIOOSCUDPServer((args.ip, args.port), dispatcher, asyncio.get_event_loop())

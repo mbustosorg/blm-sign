@@ -11,7 +11,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from blmcontrol.animation_utils import gamma, pwm
+from blmcontrol.animation_utils import gamma, pwm, MAX_PWM
 
 import time
 
@@ -19,30 +19,30 @@ import time
 def index_test():
     """Test the index of lights"""
     for i in range(8):
-        for i in range(8):
-            pwm.set_pwm(i, 0, 0)
-        pwm.set_pwm(0, 0, gamma(2096))
+        for j in range(8):
+            pwm.set_pwm(j, 0, 0)
+        pwm.set_pwm(0, 0, gamma(MAX_PWM))
         time.sleep(1)
         pwm.set_pwm(0, 0, 0)
-        pwm.set_pwm(1, 0, gamma(2096))
+        pwm.set_pwm(1, 0, gamma(MAX_PWM))
         time.sleep(1)
         pwm.set_pwm(1, 0, 0)
-        pwm.set_pwm(2, 0, gamma(2096))
+        pwm.set_pwm(2, 0, gamma(MAX_PWM))
         time.sleep(1)
         pwm.set_pwm(2, 0, 0)
-        pwm.set_pwm(3, 0, gamma(2096))
+        pwm.set_pwm(3, 0, gamma(MAX_PWM))
         time.sleep(1)
         pwm.set_pwm(3, 0, 0)
-        pwm.set_pwm(4, 0, gamma(2096))
+        pwm.set_pwm(4, 0, gamma(MAX_PWM))
         time.sleep(1)
         pwm.set_pwm(4, 0, 0)
-        pwm.set_pwm(5, 0, gamma(2096))
+        pwm.set_pwm(5, 0, gamma(MAX_PWM))
         time.sleep(1)
         pwm.set_pwm(5, 0, 0)
-        pwm.set_pwm(6, 0, gamma(2096))
+        pwm.set_pwm(6, 0, gamma(MAX_PWM))
         time.sleep(1)
         pwm.set_pwm(6, 0, 0)
-        pwm.set_pwm(7, 0, gamma(2096))
+        pwm.set_pwm(7, 0, gamma(MAX_PWM))
         time.sleep(1)
         pwm.set_pwm(7, 0, 0)
 
