@@ -24,7 +24,7 @@ class PCA9685:
     __ALLLED_OFF_H = 0xFD
 
     def __init__(self, logger, address=0x40):
-        self.bus = smbus.SMBus(0)
+        self.bus = smbus.SMBus(1)
         self.address = address
         self.logger = logger
         logger.debug("Resetting PCA9685")

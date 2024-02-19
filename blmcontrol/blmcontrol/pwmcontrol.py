@@ -27,7 +27,7 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 from blmcontrol.PCA9685 import PCA9685
-from blmcontrol.animation_pwm_justice_peace import ANIMATION_ORDER, set_pwm
+from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps, set_pwm
 
 
 try:
@@ -116,7 +116,7 @@ async def run_command(number):
 async def main_loop(args):
     """ Main execution loop """
     global current_display, QUEUE
-
+    set_display_maps()
     def animate_interval(index: int) -> int:
         """Next animation interval"""
         if args.animate_intervals:

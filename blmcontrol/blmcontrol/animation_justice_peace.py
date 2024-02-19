@@ -16,12 +16,14 @@ import time
 from blmcontrol.animation_utils import (
     TIMES,
     MEDIUM,
-    push_data,
     clear,
     window,
     scroll,
     startup,
     DISPLAY_MAPS,
+    pwm,
+    set_pwm,
+    gamma,
 )
 import blmcontrol.animation_utils
 
@@ -44,6 +46,22 @@ SLOW = 3.0
 TIMES = 12
 
 blmcontrol.animation_utils.MESSAGE_LENGTH = 5
+
+
+def push_data(value, instant=True, descending=False, ascending=False, steps=80):
+    """ Push data to I2C devices """
+    if instant:
+        steps = [4090]
+    elif descending:
+        steps = list(map(lambda x: 4090 - float(x) / float(steps) * 4090.0, range(steps)))
+    elif ascending:
+        steps = list(map(lambda x: float(x) / float(steps) * 4090.0, range(steps)))
+    for step in steps:
+        for i in range(8):
+            if value & 1 << i:
+                blmcontrol.animation_utils.pwm.set_pwm(i, 0, gamma(int(step)))
+            else:
+                blmcontrol.animation_utils.pwm.set_pwm(i, 0, 0)
 
 
 def set_display_maps():
@@ -69,17 +87,17 @@ def know():
     """Use KNOW"""
     delay = MEDIUM / 2
     for _ in range(0, int(TIMES / 3)):
-        push_data(DISPLAY_MAPS["KNOW_1"])
+        push_data(DISPLAY_MAPS["KNOW_1"], instant=False, descending=True)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["JUSTICE"])
+        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, descending=True)
         time.sleep(delay)
-        push_data(0)
+        push_data(0, instant=False, descending=True)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["KNOW_2"])
+        push_data(DISPLAY_MAPS["KNOW_2"], instant=False, descending=True)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["PEACE"])
+        push_data(DISPLAY_MAPS["PEACE"], instant=False, descending=True)
         time.sleep(delay * 1.5)
-        push_data(0)
+        push_data(0, instant=False, descending=True)
         time.sleep(delay)
     clear()
 
@@ -88,15 +106,15 @@ def no():
     """Use NO"""
     delay = MEDIUM / 2
     for _ in range(0, int(TIMES / 3)):
-        push_data(DISPLAY_MAPS["NO_1"])
+        push_data(DISPLAY_MAPS["NO_1"], instant=False, descending=True)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["JUSTICE"])
+        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, descending=True)
         time.sleep(delay)
         push_data(0)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["NO_2"])
+        push_data(DISPLAY_MAPS["NO_2"], instant=False, descending=True)
         time.sleep(delay)
-        push_data(DISPLAY_MAPS["PEACE"])
+        push_data(DISPLAY_MAPS["PEACE"], instant=False, descending=True)
         time.sleep(delay * 1.5)
         push_data(0)
         time.sleep(delay)
@@ -168,5 +186,5 @@ ANIMATION_ORDER = {
     4: sequence_through,
     5: diagonal,
     6: pj,
-    6: no,
+    7: no,
 }

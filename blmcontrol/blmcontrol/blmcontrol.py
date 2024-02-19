@@ -25,8 +25,8 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import YAPI, YRefParam, YWatchdog
 from blmcontrol.animation_utils import set_timing, push_data, DISPLAY_MAPS
-from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps
-#from blmcontrol.animations import ANIMATION_ORDER, set_display_maps
+#from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps
+from blmcontrol.animations import ANIMATION_ORDER, set_display_maps
 #from blmcontrol.animation_patrick import ANIMATION_ORDER, set_display_maps
 #from blmcontrol.animation_hose import ANIMATION_ORDER, set_display_maps
 #from blmcontrol.animation_vandy import ANIMATION_ORDER, set_display_maps

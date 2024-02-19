@@ -44,10 +44,13 @@ if SMBUS:
         BUS.write_byte_data(DEVICE1, OLATB, 0)
     except:
         LOGGER.info("Unable to initialize DEVICE1 I2C")
-    BUS.write_byte_data(DEVICE2, IODIRA, 0x00)
-    BUS.write_byte_data(DEVICE2, IODIRB, 0x00)
-    BUS.write_byte_data(DEVICE2, OLATA, 0)
-    BUS.write_byte_data(DEVICE2, OLATB, 0)
+    try:
+        BUS.write_byte_data(DEVICE2, IODIRA, 0x00)
+        BUS.write_byte_data(DEVICE2, IODIRB, 0x00)
+        BUS.write_byte_data(DEVICE2, OLATA, 0)
+        BUS.write_byte_data(DEVICE2, OLATB, 0)
+    except:
+        pass
 
 FAST = 0.05
 MEDIUM = 1.5
@@ -56,6 +59,19 @@ TIMES = 12
 MESSAGE_LENGTH = 0
 
 DISPLAY_MAPS = {}
+
+pwm = None
+
+
+def set_pwm(pwm_driver):
+    """Set local pwm driver"""
+    global pwm
+    pwm = pwm_driver
+
+
+def gamma(original, correction=0.4):
+    """ Gamma correction for LED strips """
+    return int(((original / 4096.0) ** (1 / correction)) * 4096)
 
 
 def set_timing(name: str, value):
@@ -72,8 +88,20 @@ def set_timing(name: str, value):
         TIMES = int(value)
 
 
+def push_data_pwm(value, hands=0xFF):
+    """ Push data to I2C devices """
+    for i in range(8):
+        if value & 1 << i:
+            pwm.set_pwm(i, 0, gamma(4095))
+        else:
+            pwm.set_pwm(i, 0, 0)
+
+
 def push_data(value, hands=0xFF):
     """ Push data to I2C devices """
+    if pwm:
+        push_data_pwm(value, hands)
+        return
     if SMBUS:
         try:
             BUS.write_byte_data(DEVICE1, OLATA, value & 0xFF)
