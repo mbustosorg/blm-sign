@@ -13,8 +13,13 @@
 """
 import datetime
 import logging
+import os
 import random
 import time
+
+from netifaces import AF_INET, AF_INET6, AF_LINK, AF_PACKET, AF_BRIDGE
+import netifaces as ni
+from urllib.request import urlopen
 
 try:
     import smbus
@@ -52,6 +57,14 @@ if SMBUS:
     except:
         pass
 
+try:
+    from RPi import GPIO
+
+    RPI = True
+except ImportError:
+    RPI = False
+
+
 FAST = 0.05
 MEDIUM = 1.5
 SLOW = 3.0
@@ -60,8 +73,74 @@ MESSAGE_LENGTH = 0
 MAX_PWM = 3900
 
 DISPLAY_MAPS = {}
+SIGNAL = False
 
 pwm = None
+last_cell_check = datetime.datetime.now()
+
+
+def check_cell_connectivity(retest: bool = False):
+    """Ensure that we can reach out with cell service"""
+    global last_cell_check
+
+    if ((datetime.datetime.now() - last_cell_check).seconds < 600) and not retest:
+        return
+
+    last_cell_check = datetime.datetime.now()
+    try:
+        urlopen('http://www.google.com', timeout=5)
+        LOGGER.info(f"Cell connectivity confirmed")
+        return
+    except Exception as e:
+        pass
+
+    if retest:
+        LOGGER.warning(f"Connectivity not restored, rebooting...")
+        os.system("sudo reboot")
+
+    LOGGER.warning(f"No internet connectivity")
+    usb_interface = ni.ifaddresses('usb0')
+    if AF_INET in usb_interface:
+        addr = usb_interface[AF_INET][0]['addr']
+        if addr:
+            LOGGER.warning(f"Attemption dhclient")
+            os.system("sudo dhclient -v usb0")
+        else:
+            LOGGER.warning(f"IP missing on usb0, rebooting...")
+            os.system("sudo reboot")
+    else:
+        LOGGER.warning(f"IP missing on usb0, rebooting...")
+        os.system("sudo reboot")
+
+
+def animate_interval(index: int, args) -> int:
+    """Next animation interval"""
+    if args.animate_intervals:
+        return args.animate_intervals[index]
+    return args.animate
+
+
+def signal(length, count):
+    """ Signal status on buzzer """
+    if RPI and SIGNAL:
+        for _ in range(0, count):
+            GPIO.output(12, True)
+            time.sleep(length)
+            GPIO.output(12, False)
+            time.sleep(length)
+
+
+def set_signal(args):
+    """Setup buzzer"""
+    global SIGNAL
+
+    SIGNAL = args.signal
+
+    if RPI and SIGNAL:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(12, GPIO.OUT)
+        signal(0.15, 2)
+
 
 
 def set_pwm(pwm_driver):

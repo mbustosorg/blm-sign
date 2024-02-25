@@ -24,7 +24,7 @@ from typing import List, Any
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import YAPI, YRefParam, YWatchdog
-from blmcontrol.animation_utils import set_timing, push_data, DISPLAY_MAPS
+from blmcontrol.animation_utils import set_timing, push_data, DISPLAY_MAPS, clear, animate_interval, set_signal, signal, check_cell_connectivity
 #from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps
 from blmcontrol.animations import ANIMATION_ORDER, set_display_maps
 #from blmcontrol.animation_patrick import ANIMATION_ORDER, set_display_maps
@@ -33,13 +33,6 @@ from blmcontrol.animations import ANIMATION_ORDER, set_display_maps
 #from blmcontrol.animations_wedding import ANIMATION_ORDER, DISPLAY_MAPS
 
 from blmcontrol.earth_data import earth_data
-
-try:
-    from RPi import GPIO
-
-    RPI = True
-except ImportError:
-    RPI = False
 
 
 FORMAT = "%(asctime)-15s %(message)s"
@@ -140,18 +133,13 @@ async def run_command(number):
 async def main_loop(args):
     """ Main execution loop """
     global current_display, QUEUE
-    set_display_maps()
 
-    def animate_interval(index: int) -> int:
-        """Next animation interval"""
-        if args.animate_intervals:
-            return args.animate_intervals[index]
-        return args.animate
+    QUEUE[LAST_REQUEST] = earth_data.current_time()
+    handle_animation(f"/animation/{QUEUE[CURRENT_ANIMATION]}", None)
+
+    check_cell_connectivity()
 
     while True:
-        # push_data(0, 0)
-        # await asyncio.sleep(1)
-        # continue
         lights_are_out = False
         if args.enable_sun:
             lights_are_out = earth_data.lights_out(
@@ -166,6 +154,7 @@ async def main_loop(args):
                 LOGGER.info(f"{len(QUEUE[ANIMATIONS])} commands in the queue")
                 animation = QUEUE[ANIMATIONS].pop(0)
                 await asyncio.create_task(run_command(animation))
+                check_cell_connectivity()
         #    if (earth_data.current_time() - QUEUE[LAST_REQUEST]).seconds > current_request_delay:
         #        if lights_are_out:
         #            if CURRENT_DISPLAY != 0:
@@ -181,7 +170,7 @@ async def main_loop(args):
         if not lights_are_out:
             if (
                 earth_data.current_time() - QUEUE[LAST_REQUEST]
-            ).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1):
+            ).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1, args):
                 signal(0.05, 2)
                 QUEUE[CURRENT_ANIMATION] += 1
                 if QUEUE[CURRENT_ANIMATION] > max(ANIMATION_ORDER.keys()):
@@ -199,22 +188,15 @@ async def main_loop(args):
             WATCHDOG.resetWatchdog()
 
 
-def signal(length, count):
-    """ Signal status on buzzer """
-    if RPI:
-        for _ in range(0, count):
-            GPIO.output(12, True)
-            time.sleep(length)
-            GPIO.output(12, False)
-            time.sleep(length)
-
-
 async def init_main(args, dispatcher):
     """ Initialization routine """
-    loop = asyncio.get_event_loop()
+    set_display_maps()
+    clear()
+
     for i in range(0, 5):
         try:
-            server = AsyncIOOSCUDPServer((args.ip, args.port), dispatcher, loop)
+            server = AsyncIOOSCUDPServer((args.ip, args.port), dispatcher, asyncio.get_event_loop())
+            transport, protocol = await server.create_serve_endpoint()
             LOGGER.info(f"Serving on {args.ip}:{args.port}")
             signal(0.05, 2)
             break
@@ -223,26 +205,15 @@ async def init_main(args, dispatcher):
             LOGGER.warning(f"Unable to bind to {args.ip}, retrying {i + 1}")
             time.sleep(3)
 
-    #for i in range(0, 5):
-    #    try:
-    #        transport, _ = await server.create_serve_endpoint()
-    #        LOGGER.info(f"Server endpoint established")
-    #        signal(0.05, 2)
-    #        break
-    #    except Exception as _:
-    #        signal(0.4, 2)
-    #        LOGGER.warning("Unable to establish endpoint, retrying")
-    #        time.sleep(5)
-
     await main_loop(args)
 
     transport.close()
-
-
+    
+    
 if __name__ == "__main__":
 
     PARSER = argparse.ArgumentParser()
-    PARSER.add_argument("--ip", default="192.168.0.101", help="The ip to listen on")
+    PARSER.add_argument("--ip", default="10.0.0.103", help="The ip to listen on")
     PARSER.add_argument("--port", type=int, default=9999, help="The port to listen on")
     PARSER.add_argument(
         "--on_offset", type=int, default=-120, help="minutes before sunset"
@@ -250,7 +221,9 @@ if __name__ == "__main__":
     PARSER.add_argument("--end_time", type=str, default="7:15", help="end time")
     PARSER.add_argument(
         "--animate", type=int, default=30, help="seconds between animations"
-    )
+    )    
+    PARSER.add_argument('--signal', dest='signal', action='store_true')
+    PARSER.add_argument('--no-signal', dest='signal', action='store_false')
     PARSER.add_argument(
         "--animate_intervals",
         type=int,
@@ -285,11 +258,6 @@ if __name__ == "__main__":
     DISPATCHER.map("/animation/*", handle_animation)
     DISPATCHER.map("/parameter/*", handle_parameter)
 
-    if RPI:
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(12, GPIO.OUT)
-        signal(0.15, 2)
-
-    handle_full("", None)
+    set_signal(ARGS)
 
     asyncio.run(init_main(ARGS, DISPATCHER))

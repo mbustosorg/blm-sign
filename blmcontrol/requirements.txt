@@ -3,3 +3,5 @@ yoctopuce
 pandas
 python-osc
 RPi.GPIO
+netifaces
+requests

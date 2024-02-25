@@ -15,6 +15,7 @@
 import argparse
 import asyncio
 import logging
+import os
 import time
 import datetime
 from logging import Logger
@@ -27,15 +28,8 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 from blmcontrol.PCA9685 import PCA9685
+from blmcontrol.animation_utils import animate_interval, set_signal, signal, check_cell_connectivity
 from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps, set_pwm, clear
-
-
-try:
-    from RPi import GPIO
-
-    RPI = True
-except ImportError:
-    RPI = False
 
 
 FORMAT = "%(asctime)-15s %(message)s"
@@ -116,15 +110,11 @@ async def run_command(number):
 async def main_loop(args):
     """ Main execution loop """
     global current_display, QUEUE
-    set_display_maps()
-    def animate_interval(index: int) -> int:
-        """Next animation interval"""
-        if args.animate_intervals:
-            return args.animate_intervals[index]
-        return args.animate
 
     QUEUE[LAST_REQUEST] = datetime.datetime.now()
     handle_animation(f"/animation/{QUEUE[CURRENT_ANIMATION]}", None)
+
+    check_cell_connectivity()
 
     while True:
         if len(QUEUE[ANIMATIONS]) > 0:
@@ -136,7 +126,8 @@ async def main_loop(args):
                 LOGGER.info(f"{len(QUEUE[ANIMATIONS])} commands in the queue")
                 animation = QUEUE[ANIMATIONS].pop(0)
                 await asyncio.create_task(run_command(animation))
-        if (datetime.datetime.now() - QUEUE[LAST_REQUEST]).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1):
+                check_cell_connectivity()
+        if (datetime.datetime.now() - QUEUE[LAST_REQUEST]).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1, args):
             signal(0.05, 2)
             QUEUE[CURRENT_ANIMATION] += 1
             if QUEUE[CURRENT_ANIMATION] > max(ANIMATION_ORDER.keys()):
@@ -145,18 +136,9 @@ async def main_loop(args):
             handle_animation(f"/animation/{QUEUE[CURRENT_ANIMATION]}", None)
 
 
-def signal(length, count):
-    """ Signal status on buzzer """
-    if RPI and SIGNAL:
-        for _ in range(0, count):
-            GPIO.output(12, True)
-            time.sleep(length)
-            GPIO.output(12, False)
-            time.sleep(length)
-
-
 async def init_main(args, dispatcher):
     """ Initialization routine """
+    set_display_maps()
     clear()
 
     for i in range(0, 5):
@@ -201,11 +183,6 @@ if __name__ == "__main__":
     DISPATCHER = Dispatcher()
     DISPATCHER.map("/bpm", handle_bpm)
 
-    SIGNAL = ARGS.signal
-
-    if RPI:
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(12, GPIO.OUT)
-        signal(0.15, 2)
+    set_signal(ARGS)
 
     asyncio.run(init_main(ARGS, DISPATCHER))
