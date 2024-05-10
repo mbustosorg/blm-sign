@@ -15,7 +15,6 @@
 import argparse
 import asyncio
 import logging
-import os
 import time
 import datetime
 from logging import Logger
@@ -29,7 +28,7 @@ from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 from blmcontrol.PCA9685 import PCA9685
 from blmcontrol.animation_utils import animate_interval, set_signal, signal, check_cell_connectivity
-from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps, set_pwm, clear
+from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps, set_pwm, clear, push_data
 
 
 FORMAT = "%(asctime)-15s %(message)s"
@@ -117,6 +116,22 @@ async def main_loop(args):
     check_cell_connectivity()
 
     while True:
+        date = datetime.datetime.now()
+        if date.weekday() > 4:
+            push_data(0)
+            check_cell_connectivity()
+            await asyncio.sleep(300)
+            continue
+        elif date.weekday() == 1 and (date.hour < 9 or date.hour > 23):
+            push_data(0)
+            check_cell_connectivity()
+            await asyncio.sleep(300)
+            continue
+        elif date.hour < 9 or date.hour > 20:
+            push_data(0)
+            check_cell_connectivity()
+            await asyncio.sleep(300)
+            continue
         if len(QUEUE[ANIMATIONS]) > 0:
             QUEUE[LAST_REQUEST] = datetime.datetime.now()
             if QUEUE[ANIMATIONS][-1] == max(ANIMATION_ORDER.keys()) + 1:
@@ -134,6 +149,7 @@ async def main_loop(args):
                 QUEUE[CURRENT_ANIMATION] = 1
             QUEUE[LAST_REQUEST] = datetime.datetime.now()
             handle_animation(f"/animation/{QUEUE[CURRENT_ANIMATION]}", None)
+        await asyncio.sleep(1)
 
 
 async def init_main(args, dispatcher):

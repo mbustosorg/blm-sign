@@ -154,7 +154,6 @@ async def main_loop(args):
                 LOGGER.info(f"{len(QUEUE[ANIMATIONS])} commands in the queue")
                 animation = QUEUE[ANIMATIONS].pop(0)
                 await asyncio.create_task(run_command(animation))
-                check_cell_connectivity()
         #    if (earth_data.current_time() - QUEUE[LAST_REQUEST]).seconds > current_request_delay:
         #        if lights_are_out:
         #            if CURRENT_DISPLAY != 0:
@@ -184,6 +183,7 @@ async def main_loop(args):
                 current_display = 0
                 push_data(current_display, 0)
         await asyncio.sleep(1)
+        check_cell_connectivity()
         if WATCHDOG:
             WATCHDOG.resetWatchdog()
 

@@ -88,10 +88,11 @@ def check_cell_connectivity(retest: bool = False):
 
     last_cell_check = datetime.datetime.now()
     try:
-        urlopen('http://www.google.com', timeout=5)
+        urlopen('http://www.google.com', timeout=60)
         LOGGER.info(f"Cell connectivity confirmed")
         return
     except Exception as e:
+        LOGGER.error(f"Exception during connectivity check: {str(e)}")
         pass
 
     if retest:
@@ -99,18 +100,22 @@ def check_cell_connectivity(retest: bool = False):
         os.system("sudo reboot")
 
     LOGGER.warning(f"No internet connectivity")
-    usb_interface = ni.ifaddresses('usb0')
-    if AF_INET in usb_interface:
-        addr = usb_interface[AF_INET][0]['addr']
-        if addr:
-            LOGGER.warning(f"Attemption dhclient")
-            os.system("sudo dhclient -v usb0")
+    try:
+        usb_interface = ni.ifaddresses('usb0')
+        if AF_INET in usb_interface:
+            addr = usb_interface[AF_INET][0]['addr']
+            if addr:
+                LOGGER.warning(f"Attempting dhclient")
+                os.system("sudo dhclient -v usb0")
+            else:
+                LOGGER.warning(f"IP missing on usb0, rebooting...")
+                os.system("sudo reboot")
         else:
             LOGGER.warning(f"IP missing on usb0, rebooting...")
             os.system("sudo reboot")
-    else:
-        LOGGER.warning(f"IP missing on usb0, rebooting...")
-        os.system("sudo reboot")
+    except Exception as e:
+        LOGGER.error(f"Exception during 'No internet connectivity' {str(e)}")
+        raise e
 
 
 def animate_interval(index: int, args) -> int:
@@ -140,7 +145,6 @@ def set_signal(args):
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(12, GPIO.OUT)
         signal(0.15, 2)
-
 
 
 def set_pwm(pwm_driver):

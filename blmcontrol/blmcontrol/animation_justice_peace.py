@@ -11,6 +11,7 @@ Copyright (C) 2023 Mauricio Bustos (m@bustos.org)
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
 import time
 
 from blmcontrol.animation_utils import (
@@ -48,9 +49,12 @@ TIMES = 12
 
 blmcontrol.animation_utils.MESSAGE_LENGTH = 5
 
+LOGGER = logging.getLogger("blm-sign")
+
 
 def push_data(value, instant=True, descending=False, ascending=False, steps=80):
     """ Push data to I2C devices """
+    try_count = 4
     if instant:
         steps = [MAX_PWM]
     elif descending:
@@ -59,10 +63,19 @@ def push_data(value, instant=True, descending=False, ascending=False, steps=80):
         steps = list(map(lambda x: float(x) / float(steps) * float(MAX_PWM), range(steps)))
     for step in steps:
         for i in range(8):
-            if value & 1 << i:
-                blmcontrol.animation_utils.pwm.set_pwm(i, 0, gamma(int(step)))
-            else:
-                blmcontrol.animation_utils.pwm.set_pwm(i, 0, 0)
+            for j in range(try_count):
+                try:
+                    if value & 1 << i:
+                        blmcontrol.animation_utils.pwm.set_pwm(i, 0, gamma(int(step)))
+                    else:
+                        blmcontrol.animation_utils.pwm.set_pwm(i, 0, 0)
+                    break
+                except Exception as e:
+                    if j < try_count:
+                        LOGGER.error(f"Exception during 'set_pwm', try again: {str(e)}, i={i}, j={j}, step={step}, value={value}")
+                        continue
+                    LOGGER.error(f"Too many failures during 'set_pwm' {str(e)}, i={i}, step={step}, value={value}")
+                    raise e
 
 
 def set_display_maps():
@@ -185,8 +198,9 @@ def diagonal():
         push_data(DISPLAY_MAPS["NO_1"] | DISPLAY_MAPS["PEACE"])
         time.sleep(delay)
         push_data(0)
-        time.sleep(delay)
+    time.sleep(delay)
     clear()
+    time.sleep(5.0)
 
 
 def pj():
@@ -194,9 +208,16 @@ def pj():
     push_data(DISPLAY_MAPS["PEACE"] | DISPLAY_MAPS["JUSTICE"])
     time.sleep(20)
     clear()
+    time.sleep(5.0)
 
 
 ANIMATION_ORDER = {
+    #1: clear,
+    #2: clear,
+    #3: clear,
+    #4: clear,
+    #5: clear,
+    #6: clear,
     1: no,
     2: know,
     3: toggle,
