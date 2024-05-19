@@ -5,3 +5,4 @@ python-osc
 RPi.GPIO
 netifaces
 requests
+twilio

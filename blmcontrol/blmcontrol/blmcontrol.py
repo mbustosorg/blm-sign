@@ -24,7 +24,7 @@ from typing import List, Any
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 from yoctopuce.yocto_watchdog import YAPI, YRefParam, YWatchdog
-from blmcontrol.animation_utils import set_timing, push_data, DISPLAY_MAPS, clear, animate_interval, set_signal, signal, check_cell_connectivity
+from blmcontrol.animation_utils import set_timing, push_data, DISPLAY_MAPS, clear, animate_interval, set_signal, signal, check_cell_connectivity, broadcast_message
 #from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps
 from blmcontrol.animations import ANIMATION_ORDER, set_display_maps
 #from blmcontrol.animation_patrick import ANIMATION_ORDER, set_display_maps
@@ -134,6 +134,9 @@ async def main_loop(args):
     """ Main execution loop """
     global current_display, QUEUE
 
+    is_stopped = True
+    broadcast_message("BLM application starting")
+
     QUEUE[LAST_REQUEST] = earth_data.current_time()
     handle_animation(f"/animation/{QUEUE[CURRENT_ANIMATION]}", None)
 
@@ -167,6 +170,9 @@ async def main_loop(args):
         #                CURRENT_DISPLAY = 0xFFFF
         #                push_data(CURRENT_DISPLAY)
         if not lights_are_out:
+            if is_stopped:
+                is_stopped = False
+                broadcast_message("BLM turning on")
             if (
                 earth_data.current_time() - QUEUE[LAST_REQUEST]
             ).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1, args):
@@ -177,6 +183,9 @@ async def main_loop(args):
                 QUEUE[LAST_REQUEST] = earth_data.current_time()
                 handle_animation(f"/animation/{QUEUE[CURRENT_ANIMATION]}", None)
         else:
+            if not is_stopped:
+                is_stopped = True
+                broadcast_message("BLM shutting off")
             if current_display != 0:
                 QUEUE[ANIMATIONS] = []
                 LOGGER.info("Shutting down for timing")

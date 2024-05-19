@@ -20,6 +20,7 @@ import time
 from netifaces import AF_INET, AF_INET6, AF_LINK, AF_PACKET, AF_BRIDGE
 import netifaces as ni
 from urllib.request import urlopen
+from twilio.rest import Client
 
 try:
     import smbus
@@ -298,6 +299,17 @@ def random_letters():
             push_data(bit)
             time.sleep(FAST)
     clear()
+
+
+def broadcast_message(message: str):
+    """Broadcast SMS message"""
+    try:
+        client = Client(os.environ["TWILIO_ACCOUNT_SID"], os.environ["TWILIO_AUTH_TOKEN"])
+        message = client.messages.create(body=message, from_="+14302026708", to="+15103261619")
+        LOGGER.info("SMS message sent: " + message.sid)
+    except Exception as e:
+        LOGGER.error(str(e))
+        pass
 
 
 def startup_shutdown():

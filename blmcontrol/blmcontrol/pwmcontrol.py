@@ -27,7 +27,7 @@ from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 
 from blmcontrol.PCA9685 import PCA9685
-from blmcontrol.animation_utils import animate_interval, set_signal, signal, check_cell_connectivity
+from blmcontrol.animation_utils import animate_interval, set_signal, signal, check_cell_connectivity, broadcast_message
 from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps, set_pwm, clear, push_data
 
 
@@ -110,6 +110,9 @@ async def main_loop(args):
     """ Main execution loop """
     global current_display, QUEUE
 
+    is_stopped = True
+    broadcast_message("KJKP application starting")
+
     QUEUE[LAST_REQUEST] = datetime.datetime.now()
     handle_animation(f"/animation/{QUEUE[CURRENT_ANIMATION]}", None)
 
@@ -118,16 +121,25 @@ async def main_loop(args):
     while True:
         date = datetime.datetime.now()
         if date.weekday() > 4:
+            if not is_stopped:
+                is_stopped = True
+                broadcast_message("KJKP shutting off")
             push_data(0)
             check_cell_connectivity()
             await asyncio.sleep(300)
             continue
         elif date.weekday() == 1 and (date.hour < 9 or date.hour > 23):
+            if not is_stopped:
+                is_stopped = True
+                broadcast_message("KJKP shutting off")
             push_data(0)
             check_cell_connectivity()
             await asyncio.sleep(300)
             continue
         elif date.hour < 9 or date.hour > 20:
+            if not is_stopped:
+                is_stopped = True
+                broadcast_message("KJKP shutting off")
             push_data(0)
             check_cell_connectivity()
             await asyncio.sleep(300)
@@ -143,6 +155,9 @@ async def main_loop(args):
                 await asyncio.create_task(run_command(animation))
                 check_cell_connectivity()
         if (datetime.datetime.now() - QUEUE[LAST_REQUEST]).seconds > animate_interval(QUEUE[CURRENT_ANIMATION] - 1, args):
+            if is_stopped:
+                is_stopped = False
+                broadcast_message("KJKP turning on")
             signal(0.05, 2)
             QUEUE[CURRENT_ANIMATION] += 1
             if QUEUE[CURRENT_ANIMATION] > max(ANIMATION_ORDER.keys()):
