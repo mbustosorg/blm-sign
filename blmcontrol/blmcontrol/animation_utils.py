@@ -304,6 +304,7 @@ def random_letters():
 def broadcast_message(message: str):
     """Broadcast SMS message"""
     try:
+        check_cell_connectivity()
         client = Client(os.environ["TWILIO_ACCOUNT_SID"], os.environ["TWILIO_AUTH_TOKEN"])
         message = client.messages.create(body=message, from_="+14302026708", to="+15103261619")
         LOGGER.info("SMS message sent: " + message.sid)
