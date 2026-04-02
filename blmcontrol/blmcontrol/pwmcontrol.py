@@ -26,9 +26,14 @@ from pythonosc import udp_client
 from pythonosc.dispatcher import Dispatcher
 from pythonosc.osc_server import AsyncIOOSCUDPServer
 
-from blmcontrol.PCA9685 import PCA9685
+try:
+    from blmcontrol.PCA9685 import PCA9685
+    PWM = True
+except:
+    PWM = False
 from blmcontrol.animation_utils import animate_interval, set_signal, signal, check_cell_connectivity, broadcast_message
 from blmcontrol.animation_justice_peace import ANIMATION_ORDER, set_display_maps, set_pwm, clear, push_data
+#from blmcontrol.animation_tara_reid import ANIMATION_ORDER, set_display_maps, set_pwm, clear, push_data
 
 
 FORMAT = "%(asctime)-15s %(message)s"
@@ -47,16 +52,16 @@ logging.basicConfig(format=FORMAT)
 logger = logging.getLogger(__file__)
 logger.setLevel(logging.INFO)
 
-pwm = PCA9685(logger=logger)
+if PWM:
+    pwm = PCA9685(logger=logger)
+    pwm.set_pwm_freq(200)
+    set_pwm(pwm)
 
 BPM = 120.0
 PERIOD = 1.0 / BPM * 60.0 * 1000.0
 STEP = 4096
 UPPER = 4000
 STEP = 5
-
-pwm.set_pwm_freq(200)
-set_pwm(pwm)
 
 current_display = 0x0000
 ANIMATIONS = "animations"
@@ -120,30 +125,19 @@ async def main_loop(args):
 
     while True:
         date = datetime.datetime.now()
-        if date.weekday() > 4:
+        if 3 <= date.hour < 15:
             if not is_stopped:
                 is_stopped = True
-                broadcast_message("KJKP shutting off")
+                broadcast_message("KJKP shutting off for the night")
+                LOGGER.info(f"KJKP shutting off for the night")
             push_data(0)
             check_cell_connectivity()
             await asyncio.sleep(300)
             continue
-        elif date.weekday() == 1 and (date.hour < 9 or date.hour > 23):
-            if not is_stopped:
-                is_stopped = True
-                broadcast_message("KJKP shutting off")
-            push_data(0)
-            check_cell_connectivity()
-            await asyncio.sleep(300)
-            continue
-        elif date.hour < 9 or date.hour > 20:
-            if not is_stopped:
-                is_stopped = True
-                broadcast_message("KJKP shutting off")
-            push_data(0)
-            check_cell_connectivity()
-            await asyncio.sleep(300)
-            continue
+        elif is_stopped:
+            is_stopped = False
+            broadcast_message("KJKP starting for night")
+            LOGGER.info(f"KJKP starting for night")
         if len(QUEUE[ANIMATIONS]) > 0:
             QUEUE[LAST_REQUEST] = datetime.datetime.now()
             if QUEUE[ANIMATIONS][-1] == max(ANIMATION_ORDER.keys()) + 1:

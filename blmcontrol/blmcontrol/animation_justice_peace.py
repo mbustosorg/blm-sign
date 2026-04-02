@@ -97,6 +97,49 @@ def set_display_maps():
     DISPLAY_MAPS["FULL"] = FULL
 
 
+def back_and_forth():
+    """Use KNOW"""
+    delay = MEDIUM / 4
+    for _ in range(0, int(TIMES / 3)):
+        push_data(DISPLAY_MAPS["KNOW_1"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["KNOW_1"], instant=False, descending=True, steps=20)
+        push_data(DISPLAY_MAPS["JUSTICE"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, descending=True, steps=20)
+        push_data(0)
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["KNOW_2"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["KNOW_2"], instant=False, descending=True, steps=20)
+        push_data(DISPLAY_MAPS["PEACE"])
+        time.sleep(delay * 1.5)
+        push_data(DISPLAY_MAPS["PEACE"], instant=False, descending=True, steps=20)
+        push_data(0)
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["NO_1"], instant=False, ascending=True, steps=5)
+        push_data(DISPLAY_MAPS["NO_1"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["NO_1"], instant=False, descending=True, steps=20)
+        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, ascending=True, steps=5)
+        push_data(DISPLAY_MAPS["JUSTICE"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["JUSTICE"], instant=False, descending=True, steps=20)
+        push_data(0)
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["NO_2"], instant=False, ascending=True, steps=5)
+        push_data(DISPLAY_MAPS["NO_2"])
+        time.sleep(delay)
+        push_data(DISPLAY_MAPS["NO_2"], instant=False, descending=True, steps=20)
+        push_data(DISPLAY_MAPS["PEACE"], instant=False, ascending=True, steps=5)
+        push_data(DISPLAY_MAPS["PEACE"])
+        time.sleep(delay * 1.5)
+        push_data(DISPLAY_MAPS["PEACE"], instant=False, descending=True, steps=20)
+        push_data(0)
+        time.sleep(delay)
+    clear()
+
+
 def know():
     """Use KNOW"""
     delay = MEDIUM / 4
@@ -122,7 +165,7 @@ def know():
 
 def no():
     """Use NO"""
-    delay = MEDIUM / 2
+    delay = MEDIUM / 4
     for _ in range(0, int(TIMES / 3)):
         push_data(DISPLAY_MAPS["NO_1"], instant=False, ascending=True, steps=5)
         push_data(DISPLAY_MAPS["NO_1"])
@@ -154,11 +197,11 @@ def toggle():
         push_data(DISPLAY_MAPS["NO_JP"])
         time.sleep(delay)
         push_data(DISPLAY_MAPS["FULL"])
-        time.sleep(delay)
+        #time.sleep(delay)
         push_data(DISPLAY_MAPS["KNOW_JP"])
         time.sleep(delay)
         push_data(DISPLAY_MAPS["FULL"])
-        time.sleep(delay)
+        #time.sleep(delay)
     clear()
 
 
@@ -206,7 +249,7 @@ def diagonal():
 def pj():
     """Just Peace and Justice"""
     push_data(DISPLAY_MAPS["PEACE"] | DISPLAY_MAPS["JUSTICE"])
-    time.sleep(20)
+    time.sleep(5)
     clear()
     time.sleep(5.0)
 
@@ -218,10 +261,10 @@ ANIMATION_ORDER = {
     #4: clear,
     #5: clear,
     #6: clear,
-    1: no,
+    1: back_and_forth,
     2: know,
-    3: toggle,
-    4: sequence_through,
-    5: diagonal,
+    3: no,
+    4: toggle,
+    5: toggle,
     6: pj,
 }

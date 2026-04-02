@@ -17,10 +17,13 @@ import os
 import random
 import time
 
-from netifaces import AF_INET, AF_INET6, AF_LINK, AF_PACKET, AF_BRIDGE
-import netifaces as ni
+try:
+    from netifaces import AF_INET, AF_INET6, AF_LINK, AF_PACKET, AF_BRIDGE
+    import netifaces as ni
+    from twilio.rest import Client
+except:
+    pass
 from urllib.request import urlopen
-from twilio.rest import Client
 
 try:
     import smbus
@@ -71,7 +74,7 @@ MEDIUM = 1.5
 SLOW = 3.0
 TIMES = 12
 MESSAGE_LENGTH = 0
-MAX_PWM = 3900
+MAX_PWM = 2000
 
 DISPLAY_MAPS = {}
 SIGNAL = False
